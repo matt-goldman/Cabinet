@@ -41,7 +41,7 @@ src/
 
 ## Development Guidelines
 
-**Always search Microsoft documentation (MS Learn) when working with .NET, Windows, or Microsoft features, or APIs.** Use the `microsoft_docs_search` tool to find the most current information about capabilities, best practices, and implementation patterns before making changes.
+**Always search Microsoft documentation (MS Learn) when working with .NET, Windows, or Microsoft features, or APIs.** Reference official Microsoft Learn documentation to find the most current information about capabilities, best practices, and implementation patterns before making changes.
 
 ### .NET Version Requirements
 
