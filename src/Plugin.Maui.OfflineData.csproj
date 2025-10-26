@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net9.0;net9.0-android;net9.0-ios;net9.0-maccatalyst;net9.0-windows10.0.19041.0</TargetFrameworks>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Plugin.Maui.OfflineData</RootNamespace>
+    <PackageId>Plugin.Maui.OfflineData</PackageId>
+    <Version>0.1.0</Version>
+    <Authors>Matt Goldman</Authors>
+    <Description>Encrypted offline data store for .NET MAUI</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+  </PropertyGroup>
+
+</Project>
