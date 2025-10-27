@@ -30,13 +30,11 @@
 
             <Label
                 Text="Results will be displayed below:"
-                Style="{StaticResource Body}"
                 SemanticProperties.HeadingLevel="Level3"
                 SemanticProperties.Description="Results will be displayed below:" />
 
             <Label
                 Text="{Binding Results}"
-                Style="{StaticResource Body}"
                 SemanticProperties.Description="Status message" />
 
             <Grid ColumnDefinitions="*,*,*"
