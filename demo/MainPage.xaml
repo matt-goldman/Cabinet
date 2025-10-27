@@ -21,6 +21,13 @@
                 SemanticProperties.HeadingLevel="Level2"
                 SemanticProperties.Description="Click the buttons to run data operations" />
 
+            <!-- Busy indicator -->
+            <ActivityIndicator 
+                IsRunning="{Binding IsBusy}" 
+                IsVisible="{Binding IsBusy}"
+                Color="{StaticResource Primary}"
+                HeightRequest="50" />
+
             <Label
                 Text="Results will be displayed below:"
                 Style="{StaticResource Body}"
@@ -33,8 +40,9 @@
                 SemanticProperties.Description="Status message" />
 
             <Grid ColumnDefinitions="*,*,*"
-                  RowDefinitions="Auto,Auto"
-                  RowSpacing="20">
+                  RowDefinitions="Auto,Auto,Auto"
+                  RowSpacing="20"
+                  ColumnSpacing="10">
                 
                 <!-- Generate -->
                 <Label
@@ -50,11 +58,24 @@
                     Grid.Column="1"
                     VerticalOptions="Center" />
 
-                <Button
-                    Text="Generate rows"
-                    Command="{Binding GenerateRecordsCommand}"
+                <!-- Attachments checkbox -->
+                <HorizontalStackLayout
                     Grid.Row="1"
-                    Grid.Column="0" />
+                    Grid.Column="0"
+                    Grid.ColumnSpan="2"
+                    Spacing="10">
+                    <CheckBox IsChecked="{Binding IncludeAttachments}" />
+                    <Label 
+                        Text="Add random attachments"
+                        VerticalOptions="Center" />
+                </HorizontalStackLayout>
+
+                <Button
+                    Text="Generate Records"
+                    Command="{Binding GenerateRecordsCommand}"
+                    Grid.Row="2"
+                    Grid.Column="0"
+                    IsEnabled="{Binding IsBusy, Converter={StaticResource InvertedBoolConverter}}" />
 
                 <!-- Search -->
                 <Label
@@ -65,15 +86,17 @@
 
                 <Entry
                     Text="{Binding SearchTerm}"
-                    Grid.Row="0"
-                    Grid.Column="3"
+                    Placeholder="e.g., volcano, piano"
+                    Grid.Row="1"
+                    Grid.Column="2"
                     VerticalOptions="Center" />
 
                 <Button
-                    Text="Search rows"
+                    Text="Search Records"
                     Command="{Binding SearchRecordsCommand}"
-                    Grid.Row="1"
-                    Grid.Column="2" />
+                    Grid.Row="2"
+                    Grid.Column="2"
+                    IsEnabled="{Binding IsBusy, Converter={StaticResource InvertedBoolConverter}}" />
             </Grid>
         </VerticalStackLayout>
     </ScrollView>
