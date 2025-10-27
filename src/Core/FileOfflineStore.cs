@@ -26,7 +26,7 @@ public sealed class FileOfflineStore : IOfflineStore
         var enc = await _crypto.EncryptAsync(json, id);
         var path = Path.Combine(_root, "records", $"{id}.dat.tmp");
         await File.WriteAllBytesAsync(path, enc);
-        File.Move(path, Path.ChangeExtension(path, ".dat"), true);
+        File.Move(path, path.Replace(".dat.tmp", ".dat"), true);
 
         if (_indexer != null)
             await _indexer.IndexAsync(id, JsonSerializer.Serialize(data, _jsonOptions), new Dictionary<string, string>());
@@ -40,7 +40,7 @@ public sealed class FileOfflineStore : IOfflineStore
                 await att.Content.CopyToAsync(mem);
                 var encBytes = await _crypto.EncryptAsync(mem.ToArray(), id);
                 await File.WriteAllBytesAsync(attPath, encBytes);
-                File.Move(attPath, Path.ChangeExtension(attPath, ".bin"), true);
+                File.Move(attPath, attPath.Replace(".bin.tmp", ".bin"), true);
             }
         }
     }
