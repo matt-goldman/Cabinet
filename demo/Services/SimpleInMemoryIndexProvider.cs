@@ -68,4 +68,10 @@ public class SimpleInMemoryIndexProvider : IIndexProvider
 		
 		return count;
 	}
+
+	public Task ClearAsync()
+	{
+		_index.Clear();
+		return Task.CompletedTask;
+	}
 }

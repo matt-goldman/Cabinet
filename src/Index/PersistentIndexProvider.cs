@@ -1,10 +1,9 @@
 using Plugin.Maui.OfflineData.Abstractions;
 using Plugin.Maui.OfflineData.Core;
-using Plugin.Maui.OfflineData.Security;
 using System.Collections.Concurrent;
 using System.Text.Json;
 
-namespace demo.Services;
+namespace Plugin.Maui.OfflineData.Index;
 
 /// <summary>
 /// A persistent index provider that stores its index to encrypted files on disk.
