@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using Plugin.Maui.OfflineData.Abstractions;
 using Plugin.Maui.OfflineData.Core;
 using Plugin.Maui.OfflineData.Security;
+using System.Security.Cryptography;
 
 namespace demo;
 
@@ -23,20 +24,36 @@ public static class MauiProgram
 		// Configure offline data store
 		builder.Services.AddSingleton<IOfflineStore>(sp =>
 		{
-			// Generate a random master key for demo purposes
-			// In production, this should be retrieved from SecureStorage
-			var masterKey = new byte[32];
-			System.Security.Cryptography.RandomNumberGenerator.Fill(masterKey);
-			
-			var encryptionProvider = new AesGcmEncryptionProvider(masterKey);
-			var rootPath = Path.Combine(FileSystem.AppDataDirectory, "OfflineData");
-			
-			// Use simple in-memory index provider for demo
-			// In production, replace with EasyIndex or another persistent index provider
-			var indexProvider = new SimpleInMemoryIndexProvider();
-			
-			return new FileOfflineStore(rootPath, encryptionProvider, indexProvider);
-		});
+            var OfflineKey = SecureStorage.GetAsync("OfflineDataMasterKey").GetAwaiter().GetResult();
+
+            byte[] masterKey;
+
+            if (OfflineKey == null)
+            {
+                // Generate and store a new master key
+                var newKey = new byte[32];
+                RandomNumberGenerator.Fill(newKey);
+                OfflineKey = Convert.ToBase64String(newKey);
+                SecureStorage.SetAsync("OfflineDataMasterKey", OfflineKey).GetAwaiter().GetResult();
+
+                masterKey = newKey;
+            }
+            else
+            {
+                masterKey = Convert.FromBase64String(OfflineKey);
+            }
+
+            RandomNumberGenerator.Fill(masterKey);
+
+            var encryptionProvider = new AesGcmEncryptionProvider(masterKey);
+            var rootPath = Path.Combine(FileSystem.AppDataDirectory, "OfflineData");
+
+            // Use simple in-memory index provider for demo
+            // In production, replace with EasyIndex or another persistent index provider
+            var indexProvider = new SimpleInMemoryIndexProvider();
+
+            return new FileOfflineStore(rootPath, encryptionProvider, indexProvider);
+        });
 
 		builder.Services.AddSingleton<OfflineDataService>();
 		builder.Services.AddSingleton<MainViewModel>();
