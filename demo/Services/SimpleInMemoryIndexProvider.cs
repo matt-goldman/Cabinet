@@ -7,6 +7,12 @@ namespace demo.Services;
 /// <summary>
 /// A simple in-memory index provider for demo purposes.
 /// In production, this should be replaced with EasyIndex or another persistent index provider.
+/// 
+/// Limitations:
+/// - Index is lost on app restart (not persistent)
+/// - Does not store original record metadata (creation date, etc.)
+/// - Simple substring matching without tokenisation
+/// - No support for advanced query operators
 /// </summary>
 public class SimpleInMemoryIndexProvider : IIndexProvider
 {
@@ -14,6 +20,13 @@ public class SimpleInMemoryIndexProvider : IIndexProvider
 
 	public Task IndexAsync(string id, string content, IDictionary<string, string> metadata)
 	{
+		// Note: Metadata is intentionally not stored in this simple demo implementation.
+		// A production implementation (like EasyIndex) should persist metadata for:
+		// - Filtering by date ranges
+		// - Tag-based queries
+		// - Record type filtering
+		// - Enhanced result ranking
+		
 		_index[id] = content.ToLowerInvariant();
 		return Task.CompletedTask;
 	}
@@ -31,6 +44,8 @@ public class SimpleInMemoryIndexProvider : IIndexProvider
 				var occurrences = CountOccurrences(content, lowerQuery);
 				var score = occurrences * 10.0; // Scale up for better visibility
 				
+				// Note: Using current timestamp as we don't persist original record metadata.
+				// A production implementation should store and return actual creation timestamps.
 				var header = new RecordHeader(id, DateTimeOffset.UtcNow);
 				results.Add(new SearchResult(id, score, header));
 			}
