@@ -7,19 +7,19 @@ namespace demo.ViewModels;
 public partial class MainViewModel(OfflineDataService dataService) : ObservableObject
 {
 	[ObservableProperty]
-	private string? _results;
+	public partial string? Results { get; set; }
 
 	[ObservableProperty]
-	private int _recordCount = 10;
+	public partial int RecordCount { get; set; } = 10;
 
 	[ObservableProperty]
-	private string? _searchTerm;
+	public partial string? SearchTerm { get; set; }
 
 	[ObservableProperty]
-	private bool _isBusy;
+	public partial bool IsBusy { get; set; }
 
 	[ObservableProperty]
-	private bool _includeAttachments;
+	public partial bool IncludeAttachments { get; set; }
 
 	[RelayCommand]
 	private async Task GenerateRecords()
