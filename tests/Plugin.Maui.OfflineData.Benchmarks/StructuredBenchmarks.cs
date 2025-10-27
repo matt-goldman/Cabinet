@@ -115,7 +115,7 @@ public static class StructuredBenchmarks
 				{
 					Id = $"subject-{i}",
 					Name = subjectNames[i % subjectNames.Length],
-					Description = $"Subject about {i % 5} with content about learning and education"
+					Description = $"Subject about {i % subjectNames.Length} with content about learning and education"
 				});
 			}
 			await store.SaveAsync("subjects", new SubjectsCollection { Subjects = subjects });
