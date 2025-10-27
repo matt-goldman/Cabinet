@@ -18,4 +18,12 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Link source files directly since the main project has multi-targeting issues on Linux -->
+    <Compile Include="..\..\src\Abstractions\*.cs" Link="Abstractions\%(Filename)%(Extension)" />
+    <Compile Include="..\..\src\Core\*.cs" Link="Core\%(Filename)%(Extension)" />
+    <Compile Include="..\..\src\Security\*.cs" Link="Security\%(Filename)%(Extension)" />
+    <Compile Include="..\..\src\Utilities\*.cs" Link="Utilities\%(Filename)%(Extension)" />
+  </ItemGroup>
+
 </Project>
