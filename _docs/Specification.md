@@ -83,6 +83,8 @@ The core plugin includes `PersistentIndexProvider` — a production-ready, encry
   * Master key stored in platform SecureStorage.
   * Per-file keys derived using HKDF with random nonce.
 * Encryption: AES-256-GCM (or XChaCha20-Poly1305 for large files).
+  * Default implementation: `AesGcmEncryptionProvider` uses AES-256-GCM
+  * Alternative implementations can be plugged in via `IEncryptionProvider`
 * Integrity: Authenticated encryption — corruption or tampering invalidates the file.
 * No plaintext on disk: Decryption only in memory.
 
