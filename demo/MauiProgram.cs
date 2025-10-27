@@ -3,6 +3,7 @@ using demo.ViewModels;
 using Microsoft.Extensions.Logging;
 using Plugin.Maui.OfflineData.Abstractions;
 using Plugin.Maui.OfflineData.Core;
+using Plugin.Maui.OfflineData.Index;
 using Plugin.Maui.OfflineData.Security;
 using System.Security.Cryptography;
 

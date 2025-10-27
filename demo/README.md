@@ -108,7 +108,7 @@ Try searching for:
 
 ## Index Provider
 
-The demo uses `PersistentIndexProvider` which provides:
+The demo uses `PersistentIndexProvider` from the core plugin (`Plugin.Maui.OfflineData.Index`) which provides:
 - **Persistent encrypted search index** stored on disk
 - **Survives app restarts** - no data loss
 - Full-text search with TF-IDF inspired scoring
@@ -120,7 +120,7 @@ The demo uses `PersistentIndexProvider` which provides:
 ### Alternative Implementations
 
 You can replace the index provider with:
-- **EasyIndex** (included as a dependency) - for file/table based indexing scenarios
+- **SimpleInMemoryIndexProvider** (demo implementation) - for testing without persistence
 - **Custom implementation** - implement `IIndexProvider` for specialized needs (e.g., Lucene.NET, ElasticSearch integration)
 
 ## Performance Notes
