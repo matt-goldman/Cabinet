@@ -197,6 +197,12 @@ public class IndexProviderTests : IDisposable
 
 			return Task.FromResult<IEnumerable<SearchResult>>(results);
 		}
+
+		public Task ClearAsync()
+		{
+			_index.Clear();
+			return Task.CompletedTask;
+		}
 	}
 
 	// Test data models
