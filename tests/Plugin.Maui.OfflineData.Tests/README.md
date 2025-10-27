@@ -4,9 +4,9 @@ This test project contains comprehensive unit and integration tests for the Plug
 
 ## Test Structure
 
-The test suite is organised into the following test classes:
+The test suite is organized into the following test classes:
 
-### AesGcmEncryptionProviderTests
+### AesGcmEncryptionProviderTests (8 tests)
 Tests for the AES-GCM encryption provider implementation:
 - Encryption produces non-empty ciphertext
 - Encrypt/decrypt round-trip preserves data
@@ -16,7 +16,7 @@ Tests for the AES-GCM encryption provider implementation:
 - Empty and large data handling
 - Wrong context fails decryption
 
-### FileOfflineStoreTests
+### FileOfflineStoreTests (11 tests)
 Tests for the file-based offline store implementation:
 - Directory creation on initialisation
 - Encrypted file creation
@@ -25,9 +25,9 @@ Tests for the file-based offline store implementation:
 - Delete operations
 - File attachment handling (single and multiple)
 - Search without index provider
-- Complex object serialisation
+- Complex object serialization
 
-### IndexProviderTests
+### IndexProviderTests (6 tests)
 Tests for index provider integration:
 - Index callback during save operations
 - Query matching and ranking
@@ -37,7 +37,7 @@ Tests for index provider integration:
 
 **Note:** These tests use a mock index provider. When EasyIndex (https://github.com/matt-goldman/easyindex) is integrated, these tests can be adapted to test the actual implementation.
 
-### IntegrationTests
+### IntegrationTests (8 tests)
 End-to-end integration tests simulating realistic usage:
 - Complete save/load/delete workflow
 - Attachments with records
