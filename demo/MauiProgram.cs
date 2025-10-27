@@ -31,10 +31,11 @@ public static class MauiProgram
 			var encryptionProvider = new AesGcmEncryptionProvider(masterKey);
 			var rootPath = Path.Combine(FileSystem.AppDataDirectory, "OfflineData");
 			
-			// Note: EasyIndex integration would go here
-			// For now, we're using the store without an index provider
-			// When EasyIndex is properly configured, replace null with the EasyIndex instance
-			return new FileOfflineStore(rootPath, encryptionProvider, indexer: null);
+			// Use simple in-memory index provider for demo
+			// In production, replace with EasyIndex or another persistent index provider
+			var indexProvider = new SimpleInMemoryIndexProvider();
+			
+			return new FileOfflineStore(rootPath, encryptionProvider, indexProvider);
 		});
 
 		builder.Services.AddSingleton<OfflineDataService>();
