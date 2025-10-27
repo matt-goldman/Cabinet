@@ -1,0 +1,81 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:demo.ViewModels"
+             x:DataType="vm:MainViewModel"
+             x:Class="demo.MainPage">
+
+    <ScrollView>
+        <VerticalStackLayout
+            Padding="30,0"
+            Spacing="25">
+
+            <Label
+                Text="OfflineData Benchmarks"
+                Style="{StaticResource Headline}"
+                SemanticProperties.HeadingLevel="Level1" />
+
+            <Label
+                Text="Click the buttons to run data operations"
+                Style="{StaticResource SubHeadline}"
+                SemanticProperties.HeadingLevel="Level2"
+                SemanticProperties.Description="Click the buttons to run data operations" />
+
+            <Label
+                Text="Results will be displayed below:"
+                Style="{StaticResource Body}"
+                SemanticProperties.HeadingLevel="Level3"
+                SemanticProperties.Description="Results will be displayed below:" />
+
+            <Label
+                Text="{Binding Results}"
+                Style="{StaticResource Body}"
+                SemanticProperties.Description="Status message" />
+
+            <Grid ColumnDefinitions="*,*,*"
+                  RowDefinitions="Auto,Auto"
+                  RowSpacing="20">
+                
+                <!-- Generate -->
+                <Label
+                    Text="Generate"
+                    Grid.Row="0"
+                    Grid.Column="0"
+                    VerticalOptions="Center" />
+
+                <Entry
+                    Text="{Binding RecordCount}"
+                    Keyboard="Numeric"
+                    Grid.Row="0"
+                    Grid.Column="1"
+                    VerticalOptions="Center" />
+
+                <Button
+                    Text="Generate rows"
+                    Command="{Binding GenerateRecordsCommand}"
+                    Grid.Row="1"
+                    Grid.Column="0" />
+
+                <!-- Search -->
+                <Label
+                    Text="Search"
+                    Grid.Row="0"
+                    Grid.Column="2"
+                    VerticalOptions="Center" />
+
+                <Entry
+                    Text="{Binding SearchTerm}"
+                    Grid.Row="0"
+                    Grid.Column="3"
+                    VerticalOptions="Center" />
+
+                <Button
+                    Text="Search rows"
+                    Command="{Binding SearchRecordsCommand}"
+                    Grid.Row="1"
+                    Grid.Column="2" />
+            </Grid>
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>

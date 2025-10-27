@@ -1,2 +1,9 @@
 <Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Plugin.Maui.OfflineData.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Plugin.Maui.OfflineData.Tests/Plugin.Maui.OfflineData.Tests.csproj" />
+  </Folder>
+  <Project Path="demo/demo.csproj" />
 </Solution>
