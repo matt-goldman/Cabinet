@@ -74,15 +74,19 @@ public partial class MainViewModel(OfflineDataService dataService) : ObservableO
 			else
 			{
 				var resultText = $"🔍 Found {count} result(s) for '{SearchTerm}' in {duration.TotalMilliseconds:F2}ms\n\n";
-				resultText += "Record IDs:\n";
+				
 				foreach (var result in results.Take(10))
 				{
-					resultText += $"  • {result.RecordId} (Score: {result.Score:F2})\n";
+					var record = result.Record;
+					resultText += $"📝 {record.Subject} - {record.Date:yyyy-MM-dd}\n";
+					resultText += $"   {record.Description}\n";
+					resultText += $"   Children: {string.Join(", ", record.Children)}\n";
+					resultText += $"   Score: {result.SearchResult.Score:F2}\n\n";
 				}
 
 				if (count > 10)
 				{
-					resultText += $"  ... and {count - 10} more";
+					resultText += $"... and {count - 10} more";
 				}
 
 				Results = resultText;
@@ -91,6 +95,31 @@ public partial class MainViewModel(OfflineDataService dataService) : ObservableO
 		catch (Exception ex)
 		{
 			Results = $"❌ Search error: {ex.Message}";
+		}
+		finally
+		{
+			IsBusy = false;
+		}
+	}
+
+	[RelayCommand]
+	private async Task PurgeData()
+	{
+		if (IsBusy) return;
+
+		try
+		{
+			IsBusy = true;
+			Results = "🗑️ Purging all data...";
+
+			var (filesDeleted, duration) = await dataService.PurgeDataAsync();
+
+			Results = $"✅ Purged {filesDeleted} file(s) in {duration.TotalMilliseconds:F2}ms\n" +
+					  $"All records, attachments, and index data have been deleted.";
+		}
+		catch (Exception ex)
+		{
+			Results = $"❌ Purge error: {ex.Message}";
 		}
 		finally
 		{

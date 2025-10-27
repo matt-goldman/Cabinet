@@ -106,6 +106,33 @@
                         VerticalOptions="End"
                         IsEnabled="{Binding IsBusy, Converter={StaticResource InvertedBoolConverter}}" />
                 </Grid>
+
+                <Grid RowDefinitions="Auto,Auto,Auto"
+                      RowSpacing="20"
+                      ColumnSpacing="10"
+                      MinimumWidthRequest="300"
+                      Margin="10">
+
+                    <!-- Purge -->
+                    <Label
+                        Text="Maintenance"
+                        Grid.Row="0"
+                        VerticalOptions="Start" />
+
+                    <Label
+                        Text="Delete all stored data"
+                        Grid.Row="1"
+                        VerticalOptions="Center"
+                        MinimumHeightRequest="{Binding Source={x:Reference EntryStack}, Path=Height}" />
+
+                    <Button
+                        Text="Purge Data"
+                        Command="{Binding PurgeDataCommand}"
+                        Grid.Row="2"
+                        VerticalOptions="End"
+                        BackgroundColor="DarkRed"
+                        IsEnabled="{Binding IsBusy, Converter={StaticResource InvertedBoolConverter}}" />
+                </Grid>
             </FlexLayout>
         </VerticalStackLayout>
     </ScrollView>

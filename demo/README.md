@@ -9,17 +9,29 @@ This demo application showcases the capabilities of Plugin.Maui.OfflineData with
 - Configurable record count (default: 10)
 - Optional random binary attachments (512 bytes each)
 - Performance metrics (time taken, record count)
+- **Data persists to encrypted files on disk**
 
 ### Full-Text Search
 - Search across all saved records
 - Performance metrics (time taken, result count)
 - Result ranking by relevance score
-- Display of record IDs and scores
+- **Display of detailed metadata** including:
+  - Subject and date
+  - Description
+  - Children associated with the lesson
+  - Relevance score
+- **Persistent encrypted search index** that survives app restarts
+
+### Data Management
+- **Purge Data**: Delete all stored records, attachments, and index data
+- Allows clean restart for testing and demonstrations
 
 ### Security
 - AES-256-GCM encryption for all data at rest
 - Per-record encryption with HKDF key derivation
 - Encrypted attachments
+- **Encrypted search index** stored on disk
+- Master key persisted in platform SecureStorage
 - No plaintext stored on disk
 
 ### UI Features
@@ -68,11 +80,22 @@ public class LessonRecord
    - Optionally check "Add random attachments"
    - Click "Generate Records"
    - Results show count and time taken
+   - **Data is encrypted and persisted to disk**
 
 2. **Search Records**
    - Enter a search term (e.g., "volcano", "piano", "Alice")
    - Click "Search Records"
-   - Results show matching records with IDs and relevance scores
+   - Results show matching records with:
+     - Subject and date
+     - Full description
+     - Associated children
+     - Relevance score
+   - **Search index persists across app restarts**
+
+3. **Purge Data**
+   - Click "Purge Data" to delete all stored data
+   - Removes all records, attachments, and search index
+   - Useful for clean testing or resetting the demo
 
 ## Search Examples
 
@@ -85,19 +108,20 @@ Try searching for:
 
 ## Index Provider
 
-The demo currently uses `SimpleInMemoryIndexProvider` which provides basic full-text search functionality for demonstration purposes.
+The demo uses `PersistentIndexProvider` which provides:
+- **Persistent encrypted search index** stored on disk
+- **Survives app restarts** - no data loss
+- Full-text search with TF-IDF inspired scoring
+- Metadata preservation for enhanced search results
+- Atomic writes to prevent corruption
 
-**Note:** This in-memory index is lost when the app restarts. For production use, replace with:
-- **EasyIndex** (already included as a dependency) - for persistent, encrypted indexing
-- **Custom implementation** - implement `IIndexProvider` for your needs
+**Storage location:** `/OfflineData/index/search-index.dat` (encrypted)
 
-To integrate EasyIndex, update `MauiProgram.cs`:
+### Alternative Implementations
 
-```csharp
-// Replace SimpleInMemoryIndexProvider with EasyIndex
-var indexProvider = new EasyIndexProvider(/* configuration */);
-return new FileOfflineStore(rootPath, encryptionProvider, indexProvider);
-```
+You can replace the index provider with:
+- **EasyIndex** (included as a dependency) - for file/table based indexing scenarios
+- **Custom implementation** - implement `IIndexProvider` for specialized needs (e.g., Lucene.NET, ElasticSearch integration)
 
 ## Performance Notes
 
@@ -105,11 +129,13 @@ return new FileOfflineStore(rootPath, encryptionProvider, indexProvider);
 - Search performance depends on index size and query complexity
 - Attachments add to storage and encryption time
 - All operations are asynchronous and don't block the UI
+- **Index is loaded once on startup** and cached in memory for fast queries
+- **Index updates are persisted immediately** to disk for durability
 
 ## Future Enhancements
 
-- Persistent index with EasyIndex integration
-- Record viewing and editing
-- Attachment preview
+- Record viewing and editing UI
+- Attachment preview capabilities
 - Export/import functionality
-- Advanced search with filters
+- Advanced search with date range and tag filters
+- Batch operations for large datasets

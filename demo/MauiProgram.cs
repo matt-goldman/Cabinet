@@ -43,14 +43,11 @@ public static class MauiProgram
                 masterKey = Convert.FromBase64String(OfflineKey);
             }
 
-            RandomNumberGenerator.Fill(masterKey);
-
             var encryptionProvider = new AesGcmEncryptionProvider(masterKey);
             var rootPath = Path.Combine(FileSystem.AppDataDirectory, "OfflineData");
 
-            // Use simple in-memory index provider for demo
-            // In production, replace with EasyIndex or another persistent index provider
-            var indexProvider = new SimpleInMemoryIndexProvider();
+            // Use persistent index provider that stores encrypted index to disk
+            var indexProvider = new PersistentIndexProvider(rootPath, encryptionProvider);
 
             return new FileOfflineStore(rootPath, encryptionProvider, indexProvider);
         });
