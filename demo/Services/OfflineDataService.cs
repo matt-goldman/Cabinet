@@ -33,14 +33,59 @@ public class OfflineDataService(IOfflineStore store)
 		return (count, stopwatch.Elapsed);
 	}
 
-	public async Task<(int count, TimeSpan duration, IEnumerable<SearchResult> results)> SearchRecordsAsync(string query)
+	public async Task<(int count, TimeSpan duration, IEnumerable<SearchResultWithData> results)> SearchRecordsAsync(string query)
 	{
 		var stopwatch = Stopwatch.StartNew();
-		var results = await store.SearchAsync(query);
+		var searchResults = await store.SearchAsync(query);
+		
+		// Load the actual records for each search result to get metadata
+		var resultsWithData = new List<SearchResultWithData>();
+		foreach (var result in searchResults)
+		{
+			var record = await store.LoadAsync<LessonRecord>(result.RecordId);
+			if (record != null)
+			{
+				resultsWithData.Add(new SearchResultWithData(result, record));
+			}
+		}
+		
 		stopwatch.Stop();
 
-		return (results.Count(), stopwatch.Elapsed, results);
+		return (resultsWithData.Count, stopwatch.Elapsed, resultsWithData);
 	}
+
+	public Task<(int filesDeleted, TimeSpan duration)> PurgeDataAsync()
+	{
+		var stopwatch = Stopwatch.StartNew();
+		
+		// Get the offline data directory
+		var offlineDataPath = Path.Combine(FileSystem.AppDataDirectory, "OfflineData");
+		
+		int filesDeleted = 0;
+		
+		if (Directory.Exists(offlineDataPath))
+		{
+			// Delete all files in subdirectories
+			foreach (var subdir in new[] { "records", "attachments", "index" })
+			{
+				var subdirPath = Path.Combine(offlineDataPath, subdir);
+				if (Directory.Exists(subdirPath))
+				{
+					var files = Directory.GetFiles(subdirPath);
+					foreach (var file in files)
+					{
+						File.Delete(file);
+						filesDeleted++;
+					}
+				}
+			}
+		}
+		
+		stopwatch.Stop();
+		return Task.FromResult((filesDeleted, stopwatch.Elapsed));
+	}
+
+	public record SearchResultWithData(SearchResult SearchResult, LessonRecord Record);
 
 	private static LessonRecord GenerateRandomRecord()
 	{
