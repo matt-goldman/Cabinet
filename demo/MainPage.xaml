@@ -7,7 +7,8 @@
 
     <ScrollView>
         <VerticalStackLayout
-            Padding="30,0"
+            HorizontalOptions="Center"
+            Padding="20"
             Spacing="25">
 
             <Label
@@ -37,65 +38,75 @@
                 Text="{Binding Results}"
                 SemanticProperties.Description="Status message" />
 
-            <Grid ColumnDefinitions="*,*,*"
-                  RowDefinitions="Auto,Auto,Auto"
-                  RowSpacing="20"
-                  ColumnSpacing="10">
-                
-                <!-- Generate -->
-                <Label
-                    Text="Generate"
-                    Grid.Row="0"
-                    Grid.Column="0"
-                    VerticalOptions="Center" />
+            <FlexLayout Direction="Row"
+                        JustifyContent="Center"
+                        AlignItems="Center"
+                        Wrap="Wrap">
+                <Grid ColumnDefinitions="*"
+                      RowDefinitions="Auto,Auto,Auto"
+                      RowSpacing="20"
+                      Margin="10"
+                      MinimumWidthRequest="300">
 
-                <Entry
-                    Text="{Binding RecordCount}"
-                    Keyboard="Numeric"
-                    Grid.Row="0"
-                    Grid.Column="1"
-                    VerticalOptions="Center" />
+                    <!-- Generate -->
+                    <Label
+                        Text="Generate"
+                        Grid.Row="0"
+                        VerticalOptions="Start" />
 
-                <!-- Attachments checkbox -->
-                <HorizontalStackLayout
-                    Grid.Row="1"
-                    Grid.Column="0"
-                    Grid.ColumnSpan="2"
-                    Spacing="10">
-                    <CheckBox IsChecked="{Binding IncludeAttachments}" />
-                    <Label 
-                        Text="Add random attachments"
-                        VerticalOptions="Center" />
-                </HorizontalStackLayout>
+                    <VerticalStackLayout
+                            Grid.Row="1"
+                            x:Name="EntryStack">
+                        <Entry
+                            Text="{Binding RecordCount}"
+                            Keyboard="Numeric"
+                            VerticalOptions="Center" />
 
-                <Button
-                    Text="Generate Records"
-                    Command="{Binding GenerateRecordsCommand}"
-                    Grid.Row="2"
-                    Grid.Column="0"
-                    IsEnabled="{Binding IsBusy, Converter={StaticResource InvertedBoolConverter}}" />
+                        <!-- Attachments checkbox -->
+                        <HorizontalStackLayout
+                                    Spacing="10">
+                            <CheckBox IsChecked="{Binding IncludeAttachments}" />
+                            <Label 
+                                Text="Add random attachments"
+                                VerticalOptions="Center" />
+                        </HorizontalStackLayout>
+                    </VerticalStackLayout>
 
-                <!-- Search -->
-                <Label
-                    Text="Search"
-                    Grid.Row="0"
-                    Grid.Column="2"
-                    VerticalOptions="Center" />
+                    <Button
+                         Text="Generate Records"
+                         Command="{Binding GenerateRecordsCommand}"
+                         Grid.Row="2"
+                         IsEnabled="{Binding IsBusy, Converter={StaticResource InvertedBoolConverter}}" />
+                </Grid>
 
-                <Entry
-                    Text="{Binding SearchTerm}"
-                    Placeholder="e.g., volcano, piano"
-                    Grid.Row="1"
-                    Grid.Column="2"
-                    VerticalOptions="Center" />
+                <Grid RowDefinitions="Auto,Auto,Auto"
+                      RowSpacing="20"
+                      ColumnSpacing="10"
+                      MinimumWidthRequest="300"
+                      Margin="10">
 
-                <Button
-                    Text="Search Records"
-                    Command="{Binding SearchRecordsCommand}"
-                    Grid.Row="2"
-                    Grid.Column="2"
-                    IsEnabled="{Binding IsBusy, Converter={StaticResource InvertedBoolConverter}}" />
-            </Grid>
+                    <!-- Search -->
+                    <Label
+                        Text="Search"
+                        Grid.Row="0"
+                        VerticalOptions="Start" />
+
+                    <VerticalStackLayout Grid.Row="1"
+                                         MinimumHeightRequest="{Binding Source={x:Reference EntryStack}, Path=Height}">
+                        <Entry
+                            Text="{Binding SearchTerm}"
+                            Placeholder="e.g., volcano, piano"
+                            VerticalOptions="Start" />
+                    </VerticalStackLayout>
+
+                    <Button
+                        Text="Search Records"
+                        Command="{Binding SearchRecordsCommand}"
+                        Grid.Row="2"
+                        VerticalOptions="End"
+                        IsEnabled="{Binding IsBusy, Converter={StaticResource InvertedBoolConverter}}" />
+                </Grid>
+            </FlexLayout>
         </VerticalStackLayout>
     </ScrollView>
 
