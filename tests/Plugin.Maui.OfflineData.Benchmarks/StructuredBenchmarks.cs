@@ -64,6 +64,10 @@ public static class StructuredBenchmarks
 		var testPath = Path.Combine(Path.GetTempPath(), $"StructuredBenchmarks_{Guid.NewGuid()}");
 		Directory.CreateDirectory(testPath);
 
+		// Use current year for lesson file naming to ensure consistency
+		const int BaseYear = 2024;
+		var subjectNames = new[] { "Science", "Math", "History", "English", "Art" };
+
 		try
 		{
 			var key = new byte[32];
@@ -110,7 +114,7 @@ public static class StructuredBenchmarks
 				subjects.Add(new Subject
 				{
 					Id = $"subject-{i}",
-					Name = i % 5 == 0 ? "Science" : i % 5 == 1 ? "Math" : i % 5 == 2 ? "History" : i % 5 == 3 ? "English" : "Art",
+					Name = subjectNames[i % subjectNames.Length],
 					Description = $"Subject about {i % 5} with content about learning and education"
 				});
 			}
@@ -136,7 +140,7 @@ public static class StructuredBenchmarks
 					lessonIndex++;
 				}
 				
-				await store.SaveAsync($"lessons-{2024 - year}", new LessonsCollection { Lessons = lessons });
+				await store.SaveAsync($"lessons-{BaseYear - year}", new LessonsCollection { Lessons = lessons });
 			}
 
 			var saveTime = sw.ElapsedMilliseconds - saveStart;
@@ -164,7 +168,7 @@ public static class StructuredBenchmarks
 			var loadStart = sw.ElapsedMilliseconds;
 			for (int i = 0; i < 10; i++)
 			{
-				var lessonsFile = await store.LoadAsync<LessonsCollection>($"lessons-2024");
+				var lessonsFile = await store.LoadAsync<LessonsCollection>($"lessons-{BaseYear}");
 			}
 			var loadTime = (sw.ElapsedMilliseconds - loadStart) / 10.0;
 
