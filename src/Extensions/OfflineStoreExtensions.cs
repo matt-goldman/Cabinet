@@ -40,11 +40,13 @@ public static class OfflineStoreExtensions
 			return new RecordSet<T>(results.Select(r => r.Data));
 		}
 
-		// For multiple terms, perform separate queries and combine results
+		// For multiple terms, perform parallel queries and combine results
+		var tasks = terms.Select(term => store.FindAsync<T>(term));
+		var resultsArray = await Task.WhenAll(tasks);
+		
 		var allResults = new Dictionary<string, T>(); // Use dictionary to deduplicate by ID
-		foreach (var term in terms)
+		foreach (var results in resultsArray)
 		{
-			var results = await store.FindAsync<T>(term);
 			foreach (var result in results)
 			{
 				allResults[result.RecordId] = result.Data;
