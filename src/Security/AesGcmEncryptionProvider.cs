@@ -4,12 +4,26 @@ using Plugin.Maui.OfflineData.Abstractions;
 
 namespace Plugin.Maui.OfflineData.Security;
 
+/// <summary>
+/// Provides AES-GCM authenticated encryption for data at rest.
+/// Uses AES-256-GCM with 96-bit nonces and 128-bit authentication tags.
+/// </summary>
 public sealed class AesGcmEncryptionProvider : IEncryptionProvider
 {
     private readonly byte[] _masterKey;
 
+    /// <summary>
+    /// Initialises a new instance of the <see cref="AesGcmEncryptionProvider"/> class.
+    /// </summary>
+    /// <param name="masterKey">The 256-bit (32-byte) master encryption key</param>
+    /// <exception cref="ArgumentException">Thrown if the master key is not 32 bytes</exception>
     public AesGcmEncryptionProvider(byte[] masterKey) => _masterKey = masterKey;
 
+    /// <inheritdoc/>
+    /// <remarks>
+    /// Uses AES-256-GCM authenticated encryption. The context is used as additional authenticated data (AAD).
+    /// Returns a byte array containing [nonce(12) | ciphertext(variable) | tag(16)].
+    /// </remarks>
     public Task<byte[]> EncryptAsync(ReadOnlyMemory<byte> plaintext, string context)
     {
         var nonce = RandomNumberGenerator.GetBytes(12);
@@ -28,6 +42,11 @@ public sealed class AesGcmEncryptionProvider : IEncryptionProvider
         return Task.FromResult(result);
     }
 
+    /// <inheritdoc/>
+    /// <remarks>
+    /// Uses AES-256-GCM to decrypt and verify authenticity. The context must match the value used during encryption.
+    /// Expects input in format [nonce(12) | ciphertext(variable) | tag(16)].
+    /// </remarks>
     public Task<byte[]> DecryptAsync(ReadOnlyMemory<byte> ciphertext, string context)
     {
         var aad = Encoding.UTF8.GetBytes(context);

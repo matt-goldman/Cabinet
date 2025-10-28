@@ -73,7 +73,12 @@ using Plugin.Maui.OfflineData;
 using Plugin.Maui.OfflineData.Index;
 using Plugin.Maui.OfflineData.Security;
 
-var encryption = new AesGcmEncryptionProvider();
+// Generate or retrieve a master encryption key (32 bytes)
+var masterKey = new byte[32];
+RandomNumberGenerator.Fill(masterKey);
+// In production, store this key securely using SecureStorage
+
+var encryption = new AesGcmEncryptionProvider(masterKey);
 var index = new PersistentIndexProvider(FileSystem.AppDataDirectory, encryption);
 
 var store = new FileOfflineStore(
