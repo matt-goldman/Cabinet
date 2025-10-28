@@ -77,52 +77,63 @@ public sealed class FileOfflineStore : IOfflineStore
             return [];
 
         var results = await _indexer.QueryAsync(query);
-        var typedResults = new List<SearchResult<T>>();
+        var loadTasks = new List<Task<List<SearchResult<T>>>>();
 
         foreach (var result in results)
         {
-            // Try to load as T first
-            try
+            loadTasks.Add(Task.Run(async () =>
             {
-                var data = await LoadAsync<T>(result.RecordId);
-                if (data != null)
+                var localResults = new List<SearchResult<T>>();
+                // Try to load as T first
+                try
                 {
-                    typedResults.Add(new SearchResult<T>(
-                        result.RecordId,
-                        result.Score,
-                        result.Header,
-                        data));
-                    continue;
-                }
-            }
-            catch (System.Text.Json.JsonException)
-            {
-                // If it fails, try as IList<T> (aggregate file pattern)
-            }
-
-            // Try to load as IList<T> (for aggregate file pattern)
-            try
-            {
-                var listData = await LoadAsync<List<T>>(result.RecordId);
-                if (listData != null && listData.Count > 0)
-                {
-                    // Add each item in the list as a separate result
-                    foreach (var item in listData)
+                    var data = await LoadAsync<T>(result.RecordId).ConfigureAwait(false);
+                    if (data != null)
                     {
-                        typedResults.Add(new SearchResult<T>(
+                        localResults.Add(new SearchResult<T>(
                             result.RecordId,
                             result.Score,
                             result.Header,
-                            item));
+                            data));
+                        return localResults;
                     }
                 }
-            }
-            catch (System.Text.Json.JsonException)
-            {
-                // Neither T nor List<T> worked, skip this result
-            }
+                catch (System.Text.Json.JsonException)
+                {
+                    // If it fails, try as IList<T> (aggregate file pattern)
+                }
+
+                // Try to load as IList<T> (for aggregate file pattern)
+                try
+                {
+                    var listData = await LoadAsync<List<T>>(result.RecordId).ConfigureAwait(false);
+                    if (listData != null && listData.Count > 0)
+                    {
+                        // Add each item in the list as a separate result
+                        foreach (var item in listData)
+                        {
+                            localResults.Add(new SearchResult<T>(
+                                result.RecordId,
+                                result.Score,
+                                result.Header,
+                                item));
+                        }
+                    }
+                }
+                catch (System.Text.Json.JsonException)
+                {
+                    // Neither T nor List<T> worked, skip this result
+                }
+                return localResults;
+            }));
         }
 
+        var allResults = await Task.WhenAll(loadTasks).ConfigureAwait(false);
+        var typedResults = new List<SearchResult<T>>();
+        foreach (var resultList in allResults)
+        {
+            typedResults.AddRange(resultList);
+        }
         return typedResults;
     }
 
