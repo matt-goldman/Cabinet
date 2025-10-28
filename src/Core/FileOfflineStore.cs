@@ -78,52 +78,8 @@ public sealed class FileOfflineStore : IOfflineStore
 
         var results = await _indexer.QueryAsync(query);
         
-        // Create tasks directly from async method calls (no Task.Run needed)
-        var loadTasks = results.Select(async result =>
-        {
-            var localResults = new List<SearchResult<T>>();
-            // Try to load as T first
-            try
-            {
-                var data = await LoadAsync<T>(result.RecordId).ConfigureAwait(false);
-                if (data != null)
-                {
-                    localResults.Add(new SearchResult<T>(
-                        result.RecordId,
-                        result.Score,
-                        result.Header,
-                        data));
-                    return localResults;
-                }
-            }
-            catch (System.Text.Json.JsonException)
-            {
-                // If it fails, try as IList<T> (aggregate file pattern)
-            }
-
-            // Try to load as IList<T> (for aggregate file pattern)
-            try
-            {
-                var listData = await LoadAsync<List<T>>(result.RecordId).ConfigureAwait(false);
-                if (listData != null && listData.Count > 0)
-                {
-                    // Add each item in the list as a separate result
-                    foreach (var item in listData)
-                    {
-                        localResults.Add(new SearchResult<T>(
-                            result.RecordId,
-                            result.Score,
-                            result.Header,
-                            item));
-                    }
-                }
-            }
-            catch (System.Text.Json.JsonException)
-            {
-                // Neither T nor List<T> worked, skip this result
-            }
-            return localResults;
-        }).ToArray();
+        // Create tasks from the pure function
+        var loadTasks = results.Select(LoadSearchResultAsync<T>).ToArray();
 
         var allResults = await Task.WhenAll(loadTasks).ConfigureAwait(false);
         var typedResults = new List<SearchResult<T>>();
@@ -131,6 +87,54 @@ public sealed class FileOfflineStore : IOfflineStore
         {
             typedResults.AddRange(resultList);
         }
+        return typedResults;
+    }
+
+    private async Task<List<SearchResult<T>>> LoadSearchResultAsync<T>(SearchResult result)
+    {
+        var typedResults = new List<SearchResult<T>>();
+        
+        // Try to load as T first
+        try
+        {
+            var data = await LoadAsync<T>(result.RecordId).ConfigureAwait(false);
+            if (data != null)
+            {
+                typedResults.Add(new SearchResult<T>(
+                    result.RecordId,
+                    result.Score,
+                    result.Header,
+                    data));
+                return typedResults;
+            }
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            // If it fails, try as IList<T> (aggregate file pattern)
+        }
+
+        // Try to load as IList<T> (for aggregate file pattern)
+        try
+        {
+            var listData = await LoadAsync<List<T>>(result.RecordId).ConfigureAwait(false);
+            if (listData != null && listData.Count > 0)
+            {
+                // Add each item in the list as a separate result
+                foreach (var item in listData)
+                {
+                    typedResults.Add(new SearchResult<T>(
+                        result.RecordId,
+                        result.Score,
+                        result.Header,
+                        item));
+                }
+            }
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            // Neither T nor List<T> worked, skip this result
+        }
+        
         return typedResults;
     }
 
