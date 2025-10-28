@@ -208,14 +208,14 @@ public class FileOfflineStoreTests : IDisposable
 	}
 
 	[Fact]
-	public async Task SearchAsync_WithoutIndexProvider_ShouldReturnEmptyResults()
+	public async Task FindAsync_WithoutIndexProvider_ShouldReturnEmptyResults()
 	{
 		// Arrange
 		var crypto = new AesGcmEncryptionProvider(_testKey);
 		var store = new FileOfflineStore(_testRootPath, crypto, indexer: null);
 
 		// Act
-		var results = await store.SearchAsync("test query");
+		var results = await store.FindAsync("test query");
 
 		// Assert
 		Assert.NotNull(results);
