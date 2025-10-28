@@ -47,7 +47,8 @@ public interface IOfflineStore
     Task SaveAsync<T>(string id, T data, IEnumerable<FileAttachment>? attachments = null);
     Task<T?> LoadAsync<T>(string id);
     Task DeleteAsync(string id);
-    Task<IEnumerable<SearchResult>> SearchAsync(string query);
+    Task<IEnumerable<SearchResult>> FindAsync(string query);
+    Task<IEnumerable<SearchResult<T>>> FindAsync<T>(string query);
 }
 
 public interface IEncryptionProvider
@@ -129,5 +130,5 @@ await store.SaveAsync("lesson-2025-10-27", new LessonRecord {
     Description = "Observed seagulls at the beach"
 });
 
-var results = await store.SearchAsync("seagulls");
+var results = await store.FindAsync("seagulls");
 ```

@@ -71,7 +71,7 @@ public class PersistentIndexBenchmarks
 		await EnsureDataPopulated();
 		
 		// Search for common term
-		var results = await _store.SearchAsync("seagulls");
+		var results = await _store.FindAsync("seagulls");
 		_ = results.ToList(); // Materialize results
 	}
 
@@ -82,7 +82,7 @@ public class PersistentIndexBenchmarks
 		await EnsureDataPopulated();
 		
 		// Search with multiple terms
-		var results = await _store.SearchAsync("seagulls beaches content");
+		var results = await _store.FindAsync("seagulls beaches content");
 		_ = results.ToList(); // Materialize results
 	}
 

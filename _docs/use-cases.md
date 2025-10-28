@@ -38,7 +38,7 @@ You can:
 
 * Store objects directly using `SaveAsync<T>()`
 * Retrieve with `LoadAsync<T>()`
-* Search via `SearchAsync(query)`
+* Search via `FindAsync(query)`
 
 All data remains encrypted on disk, even when the device is compromised.
 

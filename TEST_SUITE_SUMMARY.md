@@ -49,7 +49,7 @@ Tests the file-based offline store implementation:
 - ⚠️ `SaveAsync_WithAttachments_ShouldSaveAttachmentFiles` - Tests attachment saving (fails due to path bug)
 - ⚠️ `DeleteAsync_WithAttachments_ShouldDeleteAttachments` - Tests attachment deletion (fails due to path bug)
 - ⚠️ `SaveAsync_WithMultipleAttachments_ShouldSaveAllAttachments` - Tests multiple attachments (fails due to path bug)
-- ✅ `SearchAsync_WithoutIndexProvider_ShouldReturnEmptyResults` - Tests search without indexer
+- ✅ `FindAsync_WithoutIndexProvider_ShouldReturnEmptyResults` - Tests search without indexer
 
 **Status**: 5 passing, 6 failing due to known implementation bug (Path.ChangeExtension issue)
 
@@ -62,7 +62,7 @@ Tests index provider integration using a mock implementation (ready for EasyInde
 - ✅ `QueryAsync_WithNoMatches_ShouldReturnEmpty` - Tests empty results
 - ✅ `IndexAsync_ShouldHandleComplexContent` - Tests complex content indexing
 - ✅ `IndexAsync_ShouldReceiveMetadata` - Validates metadata passing
-- ✅ `SearchAsync_ShouldRankResultsByRelevance` - Tests result ranking (partial validation)
+- ✅ `FindAsync_ShouldRankResultsByRelevance` - Tests result ranking (partial validation)
 
 **Status**: All 6 tests passing ✅
 

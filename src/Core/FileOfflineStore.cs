@@ -66,10 +66,64 @@ public sealed class FileOfflineStore : IOfflineStore
         return Task.CompletedTask;
     }
 
-    public async Task<IEnumerable<SearchResult>> SearchAsync(string query)
+    public async Task<IEnumerable<SearchResult>> FindAsync(string query)
         => _indexer != null
             ? await _indexer.QueryAsync(query)
             : [];
 
+    public async Task<IEnumerable<SearchResult<T>>> FindAsync<T>(string query)
+    {
+        if (_indexer == null)
+            return [];
+
+        var results = await _indexer.QueryAsync(query);
+        var typedResults = new List<SearchResult<T>>();
+
+        foreach (var result in results)
+        {
+            // Try to load as T first
+            try
+            {
+                var data = await LoadAsync<T>(result.RecordId);
+                if (data != null)
+                {
+                    typedResults.Add(new SearchResult<T>(
+                        result.RecordId,
+                        result.Score,
+                        result.Header,
+                        data));
+                    continue;
+                }
+            }
+            catch (System.Text.Json.JsonException)
+            {
+                // If it fails, try as IList<T> (aggregate file pattern)
+            }
+
+            // Try to load as IList<T> (for aggregate file pattern)
+            try
+            {
+                var listData = await LoadAsync<List<T>>(result.RecordId);
+                if (listData != null && listData.Count > 0)
+                {
+                    // Add each item in the list as a separate result
+                    foreach (var item in listData)
+                    {
+                        typedResults.Add(new SearchResult<T>(
+                            result.RecordId,
+                            result.Score,
+                            result.Header,
+                            item));
+                    }
+                }
+            }
+            catch (System.Text.Json.JsonException)
+            {
+                // Neither T nor List<T> worked, skip this result
+            }
+        }
+
+        return typedResults;
+    }
 
 }

@@ -36,7 +36,7 @@ public class OfflineDataService(IOfflineStore store)
 	public async Task<(int count, TimeSpan duration, IEnumerable<SearchResultWithData> results)> SearchRecordsAsync(string query)
 	{
 		var stopwatch = Stopwatch.StartNew();
-		var searchResults = await store.SearchAsync(query);
+		var searchResults = await store.FindAsync(query);
 		
 		// Load the actual records for each search result to get metadata
 		var resultsWithData = new List<SearchResultWithData>();

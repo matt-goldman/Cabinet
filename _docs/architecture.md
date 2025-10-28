@@ -124,7 +124,7 @@ sequenceDiagram
     Index-->>Store: OK
     Store-->>App: Complete
 
-    App->>Store: SearchAsync("keyword")
+    App->>Store: FindAsync("keyword")
     Store->>Index: Lookup("keyword")
     Index-->>Store: recordIds
     Store->>Encryption: Decrypt(records)
