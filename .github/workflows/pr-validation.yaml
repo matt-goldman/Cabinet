@@ -1,0 +1,43 @@
+name: PR Validation
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+  merge_group:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  build-and-test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore tests/Plugin.Maui.OfflineData.Tests/Plugin.Maui.OfflineData.Tests.csproj
+
+      - name: Build solution
+        run: dotnet build tests/Plugin.Maui.OfflineData.Tests/Plugin.Maui.OfflineData.Tests.csproj --no-restore --configuration Release
+
+      - name: Run tests
+        run: dotnet test tests/Plugin.Maui.OfflineData.Tests/Plugin.Maui.OfflineData.Tests.csproj --no-build --configuration Release --verbosity normal --logger "trx;LogFileName=test-results.trx"
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: '**/TestResults/*.trx'
+          retention-days: 30
