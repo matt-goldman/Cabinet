@@ -30,6 +30,7 @@
     <Compile Include="..\..\src\Core\*.cs" Link="Core\%(Filename)%(Extension)" />
     <Compile Include="..\..\src\Security\*.cs" Link="Security\%(Filename)%(Extension)" />
     <Compile Include="..\..\src\Index\*.cs" Link="Index\%(Filename)%(Extension)" />
+    <Compile Include="..\..\src\Extensions\*.cs" Link="Extensions\%(Filename)%(Extension)" />
     <Compile Include="..\..\src\Utilities\*.cs" Link="Utilities\%(Filename)%(Extension)" />
   </ItemGroup>
 
