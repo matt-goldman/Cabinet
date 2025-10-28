@@ -72,14 +72,10 @@ public class PersistentIndexProvider : IIndexProvider
 		}
 	}
 
-	/// <summary>
-	/// Adds or updates a record in the search index.
+	/// <inheritdoc/>
+	/// <remarks>
 	/// The content is normalised to lowercase and persisted to encrypted storage.
-	/// </summary>
-	/// <param name="id">The unique identifier of the record</param>
-	/// <param name="content">The searchable text content to index</param>
-	/// <param name="metadata">Additional metadata to store with the indexed record</param>
-	/// <returns>A task representing the asynchronous indexing operation</returns>
+	/// </remarks>
 	public async Task IndexAsync(string id, string content, IDictionary<string, string> metadata)
 	{
 		await EnsureInitializedAsync();
@@ -100,12 +96,10 @@ public class PersistentIndexProvider : IIndexProvider
 		}
 	}
 
-	/// <summary>
-	/// Queries the index for records matching the specified search terms.
+	/// <inheritdoc/>
+	/// <remarks>
 	/// Performs tokenisation, term frequency analysis, and relevance scoring.
-	/// </summary>
-	/// <param name="query">The search query containing one or more terms</param>
-	/// <returns>An enumerable collection of matching search results ordered by relevance score</returns>
+	/// </remarks>
 	public async Task<IEnumerable<SearchResult>> QueryAsync(string query)
 	{
 		await EnsureInitializedAsync();
@@ -226,10 +220,7 @@ public class PersistentIndexProvider : IIndexProvider
 		}
 	}
 
-	/// <summary>
-	/// Clears all entries from the index and deletes the persisted index file.
-	/// </summary>
-	/// <returns>A task representing the asynchronous clear operation</returns>
+	/// <inheritdoc/>
 	public async Task ClearAsync()
 	{
 		await _lock.WaitAsync();

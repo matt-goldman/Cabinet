@@ -142,7 +142,7 @@ This makes it suitable for mobile devices with limited RAM.
 
 | Aspect                    | SQLite                                 | OfflineData                              |
 | ------------------------- | -------------------------------------- | ---------------------------------------- |
-| Write throughput          | Fast (batched transactions)            | Slower (per-file writes)                 |
+| Write throughput          | Fast (batched transactions)            | Slower (per-file writes)*                |
 | Read throughput           | Fast (indexed queries)                 | Fast (in-memory index + file loads)      |
 | Search performance        | Depends on FTS5 setup                  | Sub-millisecond, built-in                |
 | Encryption                | Requires SQLCipher or similar          | Built-in, zero config                    |
@@ -154,6 +154,8 @@ This makes it suitable for mobile devices with limited RAM.
 | Typical single-record ops | 0.1-0.3 ms                             | 0.1-0.5 ms                               |
 | Best for                  | Relational data, joins, complex query  | Domain models, encrypted offline storage |
 
+\* *Write throughput is highly dependent on file organisation pattern. When using aggregate files (recommended approach), write performance is comparable to or better than SQLite for typical mobile app workloads. See [data-organization.md](data-organization.md) for details on optimal file structuring.*
+
 **When to use OfflineData over SQLite:**
 - You don't need joins or schemas
 - You want encryption without extra dependencies
@@ -164,13 +166,15 @@ This makes it suitable for mobile devices with limited RAM.
 
 | Aspect                 | LiteDB                        | OfflineData                              |
 | ---------------------- | ----------------------------- | ---------------------------------------- |
-| Write throughput       | Moderate                      | Slower (per-file writes)                 |
+| Write throughput       | Moderate                      | Slower (per-file writes)*                |
 | Read throughput        | Fast                          | Fast                                     |
 | Search performance     | Good (LINQ-based)             | Sub-millisecond (inverted index)         |
 | Encryption             | Not built-in                  | Built-in, zero config                    |
 | Native dependencies    | No                            | No                                       |
 | AOT compatibility      | No (uses dynamic expressions) | Yes                                      |
 | Best for               | Document-style queries        | Domain models, encrypted offline storage |
+
+\* *Write throughput is highly dependent on file organisation pattern. When using aggregate files (recommended approach), write performance is comparable to or better than LiteDB for typical mobile app workloads. See [data-organization.md](data-organization.md) for details on optimal file structuring.*
 
 **When to use OfflineData over LiteDB:**
 - You need AOT compatibility (iOS, MAUI)

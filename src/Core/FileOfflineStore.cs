@@ -30,15 +30,11 @@ public sealed class FileOfflineStore : IOfflineStore
         Directory.CreateDirectory(Path.Combine(_root, "index"));
     }
 
-    /// <summary>
-    /// Saves data with the specified identifier to encrypted storage.
-    /// The data is serialized to JSON, encrypted, and written atomically to disk.
-    /// </summary>
-    /// <typeparam name="T">The type of data to save</typeparam>
-    /// <param name="id">The unique identifier for this record</param>
-    /// <param name="data">The data to save</param>
-    /// <param name="attachments">Optional file attachments to store with the record</param>
-    /// <returns>A task representing the asynchronous save operation</returns>
+    /// <inheritdoc/>
+    /// <remarks>
+    /// The data is serialised to JSON, encrypted, and written atomically to disk.
+    /// If an index provider is configured, the content is automatically indexed.
+    /// </remarks>
     public async Task SaveAsync<T>(string id, T data, IEnumerable<FileAttachment>? attachments = null)
     {
         var json = JsonSerializer.SerializeToUtf8Bytes(data, _jsonOptions);
@@ -64,13 +60,10 @@ public sealed class FileOfflineStore : IOfflineStore
         }
     }
 
-    /// <summary>
-    /// Loads data with the specified identifier from encrypted storage.
-    /// The encrypted file is read, decrypted, and deserialized from JSON.
-    /// </summary>
-    /// <typeparam name="T">The type of data to load</typeparam>
-    /// <param name="id">The unique identifier of the record to load</param>
-    /// <returns>The loaded data, or null if the record does not exist</returns>
+    /// <inheritdoc/>
+    /// <remarks>
+    /// The encrypted file is read, decrypted, and deserialised from JSON.
+    /// </remarks>
     public async Task<T?> LoadAsync<T>(string id)
     {
         var path = Path.Combine(_root, "records", $"{id}.dat");
@@ -81,11 +74,7 @@ public sealed class FileOfflineStore : IOfflineStore
         return JsonSerializer.Deserialize<T>(dec.AsSpan(), _jsonOptions);
     }
 
-    /// <summary>
-    /// Deletes the record and all associated attachments with the specified identifier.
-    /// </summary>
-    /// <param name="id">The unique identifier of the record to delete</param>
-    /// <returns>A task representing the asynchronous delete operation</returns>
+    /// <inheritdoc/>
     public Task DeleteAsync(string id)
     {
         var record = Path.Combine(_root, "records", $"{id}.dat");
@@ -97,25 +86,20 @@ public sealed class FileOfflineStore : IOfflineStore
         return Task.CompletedTask;
     }
 
-    /// <summary>
-    /// Searches for records matching the specified query string.
+    /// <inheritdoc/>
+    /// <remarks>
     /// Requires an index provider to be configured.
-    /// </summary>
-    /// <param name="query">The search query to match against indexed content</param>
-    /// <returns>An enumerable collection of search results with metadata, or an empty collection if no indexer is configured</returns>
+    /// </remarks>
     public async Task<IEnumerable<SearchResult>> FindAsync(string query)
         => _indexer != null
             ? await _indexer.QueryAsync(query)
             : [];
 
-    /// <summary>
-    /// Searches for records matching the specified query string and returns typed results with data.
+    /// <inheritdoc/>
+    /// <remarks>
     /// Attempts to load records as type T or as List&lt;T&gt; (for aggregate file patterns).
     /// Requires an index provider to be configured.
-    /// </summary>
-    /// <typeparam name="T">The type of data in the records</typeparam>
-    /// <param name="query">The search query to match against indexed content</param>
-    /// <returns>An enumerable collection of typed search results with data, or an empty collection if no indexer is configured</returns>
+    /// </remarks>
     public async Task<IEnumerable<SearchResult<T>>> FindAsync<T>(string query)
     {
         if (_indexer == null)
