@@ -7,5 +7,6 @@ public interface IOfflineStore
     Task SaveAsync<T>(string id, T data, IEnumerable<FileAttachment>? attachments = null);
     Task<T?> LoadAsync<T>(string id);
     Task DeleteAsync(string id);
-    Task<IEnumerable<SearchResult>> SearchAsync(string query);
+    Task<IEnumerable<SearchResult>> FindAsync(string query);
+    Task<IEnumerable<SearchResult<T>>> FindAsync<T>(string query);
 }

@@ -88,7 +88,7 @@ await store.SaveAsync("lesson-2025-10-27", new LessonRecord {
 });
 
 // Search
-var results = await store.SearchAsync("seagulls");
+var results = await store.FindAsync("seagulls");
 ```
 
 ## Extensibility

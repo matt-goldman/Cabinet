@@ -150,7 +150,7 @@ public static class StructuredBenchmarks
 			var searchStart = sw.ElapsedMilliseconds;
 			for (int i = 0; i < 10; i++)
 			{
-				var results = await store.SearchAsync("seagulls");
+				var results = await store.FindAsync("seagulls");
 				_ = results.ToList();
 			}
 			var searchSingleTime = (sw.ElapsedMilliseconds - searchStart) / 10.0;
@@ -159,7 +159,7 @@ public static class StructuredBenchmarks
 			searchStart = sw.ElapsedMilliseconds;
 			for (int i = 0; i < 10; i++)
 			{
-				var results = await store.SearchAsync("seagulls beaches educational");
+				var results = await store.FindAsync("seagulls beaches educational");
 				_ = results.ToList();
 			}
 			var searchMultiTime = (sw.ElapsedMilliseconds - searchStart) / 10.0;
