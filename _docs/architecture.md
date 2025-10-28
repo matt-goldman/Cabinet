@@ -16,7 +16,14 @@ The entry point for saving, loading, and searching records.
 It coordinates encryption, persistence, and index updates.
 
 ```csharp
-// WIP - update when code changes finished
+public interface IOfflineStore
+{
+    Task SaveAsync<T>(string id, T data, IEnumerable<FileAttachment>? attachments = null);
+    Task<T?> LoadAsync<T>(string id);
+    Task DeleteAsync(string id);
+    Task<IEnumerable<SearchResult>> FindAsync(string query);
+    Task<IEnumerable<SearchResult<T>>> FindAsync<T>(string query);
+}
 ```
 
 The default implementation, `FileOfflineStore`, persists encrypted files to the local app data directory and maintains a shared encrypted index.
