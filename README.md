@@ -1,46 +1,70 @@
 # Plugin.Maui.OfflineData
 
-A lightweight, encrypted offline data layer for .NET MAUI apps.
-It’s not a database — it’s a structured file-store that keeps your data secure and searchable without native dependencies.
+A secure, indexed offline datastore for .NET MAUI.
+It’s the simplest way to persist structured data locally - encrypted, searchable, and AOT-safe - without the complexity of a traditional database.
 
-## Why?
+## Why
 
-Most MAUI apps don’t need SQLite or Realm — they just need:
+Most mobile apps don’t need a database, they need an offline data store. Something that can securely persist structured data, search it quickly, and work seamlessly across all target platforms.
 
-* Offline persistence of structured data
-* Encryption at rest
-* Simple full-text search
-* Cross-platform reliability
+Traditional solutions like SQLite or LiteDB are excellent tools, but they bring baggage:
 
-Plugin.Maui.OfflineData delivers that in pure .NET, AOT-safe and dependency-free.
+* Native dependencies and platform-specific quirks
+* AOT compilation issues (LiteDB)
+* Configuration overhead (SQLite encryption - which has commercial implications too)
+* API friction for what often boils down to “store, query, retrieve”
+
+`Plugin.Maui.OfflineData` was created to solve that problem.
+
+It gives you database-like capabilities without the database:
+encryption, indexing, fast lookups, and predictable performance — all in pure .NET.
+
+## What it is
+
+OfflineData borrows the document-style persistence approach of NoSQL systems, but applies it in a lightweight, encrypted, AOT-friendly way tailored for mobile apps.
+
+| **Concept**                    | **Description**                                                                                           |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------- |
+| **A secure offline datastore** | Encrypted at rest, zero configuration. There is no “unencrypted mode.”                                    |
+| **Indexed by design**          | Full-text search and keyword filtering are built in, not bolted on.                                       |
+| **AOT-safe**                   | No runtime code generation, reflection, or JIT reliance. Works on iOS, Android, macOS, Windows, Catalyst. |
+| **Extensible**                 | Bring your own storage, indexer, or encryption provider if you need to.                                   |
+| **“Pit of success” defaults**  | Security, predictability, and simplicity are defaults — not optional flags.                               |
+
+If you think you need a mobile database, you might actually need this.
+
+## What it isn't
+
+| **It isn’t**          | **Because…**                                                               |
+| --------------------- | -------------------------------------------------------------------------- |
+| A relational database | There are no joins or schemas, it stores domain objects, not rows.        |
+| An ORM                | You interact with your models directly.                                    |
+| A cloud sync engine   | Data lives locally; sync is up to you.                                     |
+| A toy                 | It’s built for production use: encrypted, indexed, and tested under load. |
+
+If you’ve ever used IndexedDB in the browser, you can think of this as IndexedDB for MAUI, but simpler, safer, and designed for .NET idioms.
 
 ## Features
 
-✅ AES-256-GCM encryption (per-file)
-✅ HKDF key derivation and SecureStorage master key
-✅ Atomic writes, no plaintext on disk
-✅ **Persistent encrypted full-text index** (blazingly fast!)
-✅ JSON serialisation (customisable)
-✅ Cross-platform (.NET 8/9 MAUI Android, iOS, Windows, Catalyst)
+* AES-256-GCM encryption (per file)
+* HKDF key derivation with SecureStorage master key
+* Persistent encrypted full-text index
+* Atomic writes (no plaintext ever on disk)
+* JSON serialisation (customisable)
+* Extensible architecture (BYO store, index, encryption)
+* 100% managed .NET, AOT-safe, no native dependencies
 
-## Performance
+## Performance Summary
 
-Plugin.Maui.OfflineData is **FAST** 🚀. Here are benchmark results from real-world testing:
+`Plugin.Maui.OfflineData` offers consistent, predictable performance, even with encryption.
 
-| Dataset Size | Save & Index | Search (single) | Search (multi) | Load Record | Cold Start |
-|--------------|--------------|-----------------|----------------|-------------|------------|
-|           10 |    116.00 ms |         1.50 ms |        0.00 ms |     2.20 ms |   10.00 ms |
-|          100 |     99.00 ms |         0.00 ms |        0.10 ms |     0.10 ms |    1.00 ms |
-|         1000 |   2580.00 ms |         1.20 ms |        0.80 ms |     0.00 ms |    6.00 ms |
-|         5000 |  25510.00 ms |         1.80 ms |        2.00 ms |     0.10 ms |   40.00 ms |
+| **Pattern**     | **Records** | **Operation**            | **Duration** | **Search (avg)** | **Cold Start** |
+| --------------- | ----------- | ------------------------ | ------------ | ---------------- | -------------- |
+| Record-per-file | 5,000       | Save + Index all records | 10,000 ms    | 0.9 ms           | 19 ms          |
+| Aggregate files | 5,000       | Save + Index all records | **30 ms**    | **0.15 ms**      | **4 ms**       |
 
-**Key Observations:**
-- 🔥 **Sub-millisecond search** even with 5,000 encrypted records
-- ⚡ **Average indexing time**: ~5ms per record (with encryption)
-- 💾 **Cold start**: Only 40ms to reload a 5,000-record index from disk
-- 🔐 All data encrypted at rest with no performance compromise
-
-_Run benchmarks yourself: `dotnet run -c Release --project tests/Plugin.Maui.OfflineData.Benchmarks`_
+Tests measure saving and indexing the _entire dataset_, not single-record inserts.
+For incremental operations, performance is effectively instantaneous.
 
 ## Quick start
 
@@ -49,28 +73,39 @@ using Plugin.Maui.OfflineData;
 using Plugin.Maui.OfflineData.Index;
 using Plugin.Maui.OfflineData.Security;
 
-// Configure the store with persistent encrypted index
-var encryptionProvider = new AesGcmEncryptionProvider();
-var indexProvider = new PersistentIndexProvider(
-    FileSystem.AppDataDirectory, 
-    encryptionProvider);
+var encryption = new AesGcmEncryptionProvider();
+var index = new PersistentIndexProvider(FileSystem.AppDataDirectory, encryption);
 
 var store = new FileOfflineStore(
     FileSystem.AppDataDirectory,
-    encryptionProvider,
-    indexProvider);
+    encryption,
+    index);
 
-// Save a record (automatically indexed)
+// Save
 await store.SaveAsync("lesson-2025-10-27", new LessonRecord {
     Subject = "Science",
     Description = "Observed seagulls at the beach"
 });
 
-// Search (blazingly fast!)
+// Search
 var results = await store.SearchAsync("seagulls");
 ```
 
-## Architecture
+## Extensibility
+
+The core components (storage, indexing, and encryption) are all replaceable.
+You can implement `IOfflineStore`, `IIndexProvider`, or `IEncryptionProvider` to extend behaviour.
+
+Examples:
+
+* Replace AES-GCM with a hardware-backed key provider
+* Implement a custom indexer for vector search
+* Store large attachments in a separate encrypted volume
+
+See Architecture
+ for extension points and examples.
+
+## Conceptual Architecture
 
 ```tree
 /AppData/
@@ -85,90 +120,13 @@ var results = await store.SearchAsync("seagulls");
       └── {year}.sum      # Encrypted summaries
 ```
 
-## API
+## Learn Mode
 
-```csharp
-public interface IOfflineStore
-{
-    Task SaveAsync<T>(string id, T data, IEnumerable<FileAttachment>? attachments = null);
-    Task<T?> LoadAsync<T>(string id);
-    Task DeleteAsync(string id);
-    Task<IEnumerable<SearchResult>> SearchAsync(string query);
-}
-
-public interface IEncryptionProvider
-{
-    Task<byte[]> EncryptAsync(ReadOnlyMemory<byte> plaintext, string context);
-    Task<byte[]> DecryptAsync(ReadOnlyMemory<byte> ciphertext, string context);
-}
-
-public interface IIndexProvider
-{
-    Task IndexAsync(string id, string content, IDictionary<string, string> metadata);
-    Task<IEnumerable<SearchResult>> QueryAsync(string query);
-    Task ClearAsync();
-}
-```
-
-## Indexing
-
-Plugin.Maui.OfflineData includes **PersistentIndexProvider** — a production-ready, encrypted full-text search implementation:
-
-- ✅ **Encrypted at rest**: Index stored in encrypted format on disk
-- ✅ **Persistent**: Survives app restarts with fast cold-start (~40ms for 5000 records)
-- ✅ **Tokenized search**: Smart word-based matching with relevance scoring
-- ✅ **Metadata support**: Filter and rank by custom metadata
-- ✅ **Thread-safe**: Handles concurrent indexing operations safely
-
-### Using PersistentIndexProvider
-
-```csharp
-using Plugin.Maui.OfflineData.Index;
-
-var indexProvider = new PersistentIndexProvider(
-    FileSystem.AppDataDirectory,
-    encryptionProvider);
-
-// Index is automatically loaded from disk on first use
-// Index updates are immediately persisted
-await indexProvider.IndexAsync("id", "searchable content", metadata);
-
-// Search with multiple terms
-var results = await indexProvider.QueryAsync("term1 term2");
-
-// Clear all indexed data
-await indexProvider.ClearAsync();
-```
-
-Custom implementations of `IIndexProvider` can be plugged in for specialized search needs (e.g., Lucene.NET, ML-based search).
-
-## Security model
-
-* Master key in SecureStorage
-* Per-file keys via HKDF(masterKey, fileId)
-* AES-GCM authenticated encryption
-* Atomic writes to .tmp then rename
-* No decrypted files written to disk
-
-## Extensibility
-
-* Swap encryption algorithms (e.g. XChaCha20)
-* Plug custom index providers (Lucene.NET, ML-based)
-* Plug custom tokenizers or metadata processors
-* Custom serialisers for domain-specific data
-
-## Non-goals
-
-* Relational querying or joins
-* Multi-GB datasets
-* Background sync (there are better ways to do this)
-
-## Roadmap
-
-| Item                                        | Status |
-| ------------------------------------------- | ------ |
-| Add incremental index update support        | ⬜     |
-| Add thumbnail caching for attachments       | ⬜     |
-| Provide OfflineData.SqliteAdapter sample    | ⬜     |
-| Add unit-tested atomic writer abstraction   | ⬜     |
-| Publish NuGet package with docs and samples | ⬜     |
+| **Topic**                                                        | **Description**                                          |
+| ---------------------------------------------------------------- | -------------------------------------------------------- |
+| [docs/data-organization.md](docs/data-organization.md)           | How to structure your data for speed and maintainability |
+| [docs/performance.md](docs/performance.md)                       | Full benchmark data and comparisons                      |
+| [docs/performance-principles.md](docs/performance-principles.md) | Why the design scales so well                            |
+| [docs/architecture.md](docs/architecture.md)                     | Encryption, atomic writes, and extensibility             |
+| [docs/api-reference.md](docs/api-reference.md)                   | Interfaces, extension points, and contracts              |
+| [docs/use-cases.md](docs/use-cases.md)                           | Examples of real-world usage patterns                    |
