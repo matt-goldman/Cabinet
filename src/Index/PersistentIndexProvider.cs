@@ -27,6 +27,10 @@ public class PersistentIndexProvider : IIndexProvider
 		Directory.CreateDirectory(Path.Combine(indexDirectory, "index"));
 	}
 
+	/// <summary>
+	/// Ensures the index is loaded from disk on first access.
+	/// </summary>
+	/// <returns>A task representing the asynchronous initialisation operation</returns>
 	private async Task EnsureInitializedAsync()
 	{
 		if (_isInitialized) return;
@@ -68,6 +72,14 @@ public class PersistentIndexProvider : IIndexProvider
 		}
 	}
 
+	/// <summary>
+	/// Adds or updates a record in the search index.
+	/// The content is normalised to lowercase and persisted to encrypted storage.
+	/// </summary>
+	/// <param name="id">The unique identifier of the record</param>
+	/// <param name="content">The searchable text content to index</param>
+	/// <param name="metadata">Additional metadata to store with the indexed record</param>
+	/// <returns>A task representing the asynchronous indexing operation</returns>
 	public async Task IndexAsync(string id, string content, IDictionary<string, string> metadata)
 	{
 		await EnsureInitializedAsync();
@@ -88,6 +100,12 @@ public class PersistentIndexProvider : IIndexProvider
 		}
 	}
 
+	/// <summary>
+	/// Queries the index for records matching the specified search terms.
+	/// Performs tokenisation, term frequency analysis, and relevance scoring.
+	/// </summary>
+	/// <param name="query">The search query containing one or more terms</param>
+	/// <returns>An enumerable collection of matching search results ordered by relevance score</returns>
 	public async Task<IEnumerable<SearchResult>> QueryAsync(string query)
 	{
 		await EnsureInitializedAsync();
@@ -117,6 +135,12 @@ public class PersistentIndexProvider : IIndexProvider
 		}
 	}
 
+	/// <summary>
+	/// Tokenises a search query into individual search terms.
+	/// Filters out very short terms (less than 3 characters) and removes duplicates.
+	/// </summary>
+	/// <param name="query">The query string to tokenise</param>
+	/// <returns>A list of distinct search terms</returns>
 	private static List<string> TokenizeQuery(string query)
 	{
 		return query.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
@@ -125,6 +149,13 @@ public class PersistentIndexProvider : IIndexProvider
 			.ToList();
 	}
 
+	/// <summary>
+	/// Calculates a relevance score for content based on term frequency.
+	/// Uses logarithmic scoring with diminishing returns for multiple occurrences.
+	/// </summary>
+	/// <param name="content">The content to score</param>
+	/// <param name="queryTerms">The search terms to match</param>
+	/// <returns>The calculated relevance score</returns>
 	private static double CalculateScore(string content, List<string> queryTerms)
 	{
 		double score = 0;
@@ -142,6 +173,12 @@ public class PersistentIndexProvider : IIndexProvider
 		return score;
 	}
 
+	/// <summary>
+	/// Counts the number of occurrences of a pattern within text.
+	/// </summary>
+	/// <param name="text">The text to search</param>
+	/// <param name="pattern">The pattern to find</param>
+	/// <returns>The count of occurrences</returns>
 	private static int CountOccurrences(string text, string pattern)
 	{
 		var count = 0;
@@ -156,6 +193,11 @@ public class PersistentIndexProvider : IIndexProvider
 		return count;
 	}
 
+	/// <summary>
+	/// Persists the in-memory index to encrypted storage on disk.
+	/// Uses atomic write operations to prevent data corruption.
+	/// </summary>
+	/// <returns>A task representing the asynchronous save operation</returns>
 	private async Task SaveIndexAsync()
 	{
 		if (!_isDirty) return;
@@ -184,6 +226,10 @@ public class PersistentIndexProvider : IIndexProvider
 		}
 	}
 
+	/// <summary>
+	/// Clears all entries from the index and deletes the persisted index file.
+	/// </summary>
+	/// <returns>A task representing the asynchronous clear operation</returns>
 	public async Task ClearAsync()
 	{
 		await _lock.WaitAsync();

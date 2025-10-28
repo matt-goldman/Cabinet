@@ -3,6 +3,10 @@ using Plugin.Maui.OfflineData.Abstractions;
 
 namespace Plugin.Maui.OfflineData.Core;
 
+/// <summary>
+/// A file-based implementation of <see cref="IOfflineStore"/> that stores encrypted records
+/// and attachments in the local file system with optional full-text search indexing.
+/// </summary>
 public sealed class FileOfflineStore : IOfflineStore
 {
     private readonly string _root;
@@ -10,6 +14,12 @@ public sealed class FileOfflineStore : IOfflineStore
     private readonly IIndexProvider? _indexer;
     private readonly JsonSerializerOptions _jsonOptions = new() { WriteIndented = false };
 
+    /// <summary>
+    /// Initialises a new instance of the <see cref="FileOfflineStore"/> class.
+    /// </summary>
+    /// <param name="rootPath">The root directory path where records and attachments will be stored</param>
+    /// <param name="crypto">The encryption provider to use for encrypting and decrypting data</param>
+    /// <param name="indexer">Optional index provider for enabling search capabilities</param>
     public FileOfflineStore(string rootPath, IEncryptionProvider crypto, IIndexProvider? indexer = null)
     {
         _root = rootPath;
@@ -20,6 +30,15 @@ public sealed class FileOfflineStore : IOfflineStore
         Directory.CreateDirectory(Path.Combine(_root, "index"));
     }
 
+    /// <summary>
+    /// Saves data with the specified identifier to encrypted storage.
+    /// The data is serialized to JSON, encrypted, and written atomically to disk.
+    /// </summary>
+    /// <typeparam name="T">The type of data to save</typeparam>
+    /// <param name="id">The unique identifier for this record</param>
+    /// <param name="data">The data to save</param>
+    /// <param name="attachments">Optional file attachments to store with the record</param>
+    /// <returns>A task representing the asynchronous save operation</returns>
     public async Task SaveAsync<T>(string id, T data, IEnumerable<FileAttachment>? attachments = null)
     {
         var json = JsonSerializer.SerializeToUtf8Bytes(data, _jsonOptions);
@@ -45,6 +64,13 @@ public sealed class FileOfflineStore : IOfflineStore
         }
     }
 
+    /// <summary>
+    /// Loads data with the specified identifier from encrypted storage.
+    /// The encrypted file is read, decrypted, and deserialized from JSON.
+    /// </summary>
+    /// <typeparam name="T">The type of data to load</typeparam>
+    /// <param name="id">The unique identifier of the record to load</param>
+    /// <returns>The loaded data, or null if the record does not exist</returns>
     public async Task<T?> LoadAsync<T>(string id)
     {
         var path = Path.Combine(_root, "records", $"{id}.dat");
@@ -55,6 +81,11 @@ public sealed class FileOfflineStore : IOfflineStore
         return JsonSerializer.Deserialize<T>(dec.AsSpan(), _jsonOptions);
     }
 
+    /// <summary>
+    /// Deletes the record and all associated attachments with the specified identifier.
+    /// </summary>
+    /// <param name="id">The unique identifier of the record to delete</param>
+    /// <returns>A task representing the asynchronous delete operation</returns>
     public Task DeleteAsync(string id)
     {
         var record = Path.Combine(_root, "records", $"{id}.dat");
@@ -66,11 +97,25 @@ public sealed class FileOfflineStore : IOfflineStore
         return Task.CompletedTask;
     }
 
+    /// <summary>
+    /// Searches for records matching the specified query string.
+    /// Requires an index provider to be configured.
+    /// </summary>
+    /// <param name="query">The search query to match against indexed content</param>
+    /// <returns>An enumerable collection of search results with metadata, or an empty collection if no indexer is configured</returns>
     public async Task<IEnumerable<SearchResult>> FindAsync(string query)
         => _indexer != null
             ? await _indexer.QueryAsync(query)
             : [];
 
+    /// <summary>
+    /// Searches for records matching the specified query string and returns typed results with data.
+    /// Attempts to load records as type T or as List&lt;T&gt; (for aggregate file patterns).
+    /// Requires an index provider to be configured.
+    /// </summary>
+    /// <typeparam name="T">The type of data in the records</typeparam>
+    /// <param name="query">The search query to match against indexed content</param>
+    /// <returns>An enumerable collection of typed search results with data, or an empty collection if no indexer is configured</returns>
     public async Task<IEnumerable<SearchResult<T>>> FindAsync<T>(string query)
     {
         if (_indexer == null)
