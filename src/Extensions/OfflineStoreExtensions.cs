@@ -44,10 +44,13 @@ public static class OfflineStoreExtensions
 		var allResults = new Dictionary<string, T>(); // Use dictionary to deduplicate by ID
 		foreach (var term in terms)
 		{
-			var results = await store.FindAsync<T>(term);
-			foreach (var result in results)
+			// Use Select to explicitly project SearchResult<T> to (RecordId, Data) pairs
+			var resultPairs = (await store.FindAsync<T>(term))
+				.Select(r => (r.RecordId, r.Data));
+			
+			foreach (var (id, data) in resultPairs)
 			{
-				allResults[result.RecordId] = result.Data;
+				allResults[id] = data;
 			}
 		}
 
