@@ -124,9 +124,9 @@ See Architecture
 
 | **Topic**                                                        | **Description**                                          |
 | ---------------------------------------------------------------- | -------------------------------------------------------- |
-| [docs/data-organization.md](docs/data-organization.md)           | How to structure your data for speed and maintainability |
-| [docs/performance.md](docs/performance.md)                       | Full benchmark data and comparisons                      |
-| [docs/performance-principles.md](docs/performance-principles.md) | Why the design scales so well                            |
-| [docs/architecture.md](docs/architecture.md)                     | Encryption, atomic writes, and extensibility             |
-| [docs/api-reference.md](docs/api-reference.md)                   | Interfaces, extension points, and contracts              |
-| [docs/use-cases.md](docs/use-cases.md)                           | Examples of real-world usage patterns                    |
+| [docs/data-organization.md](_docs/data-organization.md)           | How to structure your data for speed and maintainability |
+| [docs/performance.md](_docs/performance.md)                       | Full benchmark data and comparisons                      |
+| [docs/performance-principles.md](_docs/performance-principles.md) | Why the design scales so well                            |
+| [docs/architecture.md](_docs/architecture.md)                     | Encryption, atomic writes, and extensibility             |
+| [docs/api-reference.md](_docs/api-reference.md)                   | Interfaces, extension points, and contracts              |
+| [docs/use-cases.md](_docs/use-cases.md)                           | Examples of real-world usage patterns                    |
