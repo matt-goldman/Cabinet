@@ -10,6 +10,7 @@
     <Authors>Matt Goldman</Authors>
     <Description>Encrypted offline data store for .NET MAUI</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
 </Project>
