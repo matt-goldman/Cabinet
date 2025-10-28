@@ -212,7 +212,7 @@ public class IndexProviderTests : IDisposable
 		Assert.NotNull(results);
 		var resultList = results.ToList();
 		
-		// Note: The mock indexer matches on the entire serialized JSON, so it finds "Seagulls" 
+		// Note: The mock indexer matches on the entire serialised JSON, so it finds "Seagulls" 
 		// in the aggregate. We return all 3 items from the list since we can't filter 
 		// individual items without more complex logic. This is expected behavior.
 		Assert.Equal(3, resultList.Count);
