@@ -1,6 +1,6 @@
 # Cabinet
 
-![icon](/assets/icon-256.png)
+![icon](https://raw.githubusercontent.com/matt-goldman/Cabinet/refs/heads/main/assets/icon-256.png)
 
 A secure, indexed offline datastore for .NET.
 It’s the simplest way to persist structured data locally - encrypted, searchable, and AOT-safe - without the complexity of a traditional database.
