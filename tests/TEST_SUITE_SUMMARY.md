@@ -2,13 +2,13 @@
 
 ## Overview
 
-This document summarizes the test suite created for the Plugin.Maui.OfflineData project as requested in issue "🧪 Tests".
+This document summarizes the test suite created for the Cabinet project as requested in issue "🧪 Tests".
 
 ## Test Project Structure
 
 ```
-tests/Plugin.Maui.OfflineData.Tests/
-├── Plugin.Maui.OfflineData.Tests.csproj
+tests/Cabinet.Tests/
+├── Cabinet.Tests.csproj
 ├── AesGcmEncryptionProviderTests.cs        (8 tests)
 ├── FileOfflineStoreTests.cs                (11 tests)
 ├── IndexProviderTests.cs                   (6 tests)
@@ -168,6 +168,6 @@ To make all tests pass:
 
 ## Conclusion
 
-The test suite successfully validates the expected behavior of the Plugin.Maui.OfflineData library. The suite contains **33 well-designed tests** that comprehensively test all major components. While some tests currently fail, they correctly identify implementation bugs that need to be fixed. The tests follow .NET testing best practices and are ready for continuous integration.
+The test suite successfully validates the expected behavior of the Cabinet library. The suite contains **33 well-designed tests** that comprehensively test all major components. While some tests currently fail, they correctly identify implementation bugs that need to be fixed. The tests follow .NET testing best practices and are ready for continuous integration.
 
 **As specified in the issue**: "The tests don't need to pass yet, they just need to be sensibly designed to validate that the product works." ✅ This requirement has been met.

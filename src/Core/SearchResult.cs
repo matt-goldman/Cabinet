@@ -1,4 +1,4 @@
-namespace Plugin.Maui.OfflineData.Core;
+namespace Cabinet.Core;
 
 /// <summary>
 /// Represents a search result containing the record identifier, relevance score, and metadata.

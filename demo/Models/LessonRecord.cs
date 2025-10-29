@@ -1,4 +1,4 @@
-using Plugin.Maui.OfflineData.Core;
+using Cabinet.Core;
 
 namespace demo.Models;
 

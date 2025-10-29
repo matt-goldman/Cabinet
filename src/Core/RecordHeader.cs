@@ -1,4 +1,4 @@
-namespace Plugin.Maui.OfflineData.Core;
+namespace Cabinet.Core;
 
 /// <summary>
 /// Represents metadata about a stored record, including its identifier, creation timestamp, and custom metadata.

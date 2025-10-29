@@ -1,6 +1,6 @@
 ﻿using demo.Models;
-using Plugin.Maui.OfflineData.Abstractions;
-using Plugin.Maui.OfflineData.Core;
+using Cabinet.Abstractions;
+using Cabinet.Core;
 using System.Diagnostics;
 using System.Security.Cryptography;
 

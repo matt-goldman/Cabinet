@@ -1,7 +1,7 @@
-using Plugin.Maui.OfflineData.Core;
-using Plugin.Maui.OfflineData.Security;
+using Cabinet.Core;
+using Cabinet.Security;
 
-namespace Plugin.Maui.OfflineData.Tests;
+namespace Cabinet.Tests;
 
 public class FileOfflineStoreTests : IDisposable
 {

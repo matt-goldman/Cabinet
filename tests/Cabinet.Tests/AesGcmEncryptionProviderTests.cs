@@ -1,7 +1,7 @@
 using System.Text;
-using Plugin.Maui.OfflineData.Security;
+using Cabinet.Security;
 
-namespace Plugin.Maui.OfflineData.Tests;
+namespace Cabinet.Tests;
 
 public class AesGcmEncryptionProviderTests
 {

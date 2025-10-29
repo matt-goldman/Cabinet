@@ -1,9 +1,9 @@
-using Plugin.Maui.OfflineData.Abstractions;
-using Plugin.Maui.OfflineData.Core;
+using Cabinet.Abstractions;
+using Cabinet.Core;
 using System.Collections.Concurrent;
 using System.Text.Json;
 
-namespace Plugin.Maui.OfflineData.Index;
+namespace Cabinet.Index;
 
 /// <summary>
 /// A persistent index provider that stores its index to encrypted files on disk.
@@ -20,6 +20,15 @@ public class PersistentIndexProvider : IIndexProvider
 
 	private record IndexEntry(string Id, string Content, IDictionary<string, string> Metadata, DateTimeOffset Created);
 
+	/// <summary>
+	/// Initializes a new instance of the <see cref="PersistentIndexProvider"/> class, which provides functionality for
+	/// managing a persistent search index.
+	/// </summary>
+	/// <remarks>This constructor creates the necessary directory structure for the index if it does not already
+	/// exist. The index file is stored at "index/search-index.dat" within the specified <paramref
+	/// name="indexDirectory"/>.</remarks>
+	/// <param name="indexDirectory">The root directory where the index files will be stored. This directory must be writable.</param>
+	/// <param name="encryptionProvider">An implementation of <see cref="IEncryptionProvider"/> used to encrypt and decrypt the index data.</param>
 	public PersistentIndexProvider(string indexDirectory, IEncryptionProvider encryptionProvider)
 	{
 		_indexFilePath = Path.Combine(indexDirectory, "index", "search-index.dat");

@@ -1,6 +1,6 @@
 # Performance Principles
 
-`Plugin.Maui.OfflineData` is designed from the ground up to provide predictable, consistent performance across all platforms, even under heavy encryption. This document explains the architectural decisions and design principles that make it fast.
+`Cabinet` is designed from the ground up to provide predictable, consistent performance across all platforms, even under heavy encryption. This document explains the architectural decisions and design principles that make it fast.
 
 ## Core Design Principles
 
@@ -169,7 +169,7 @@ This makes it suitable for mobile devices with limited RAM.
 | Write throughput       | Moderate                      | Slower (per-file writes)*                |
 | Read throughput        | Fast                          | Fast                                     |
 | Search performance     | Good (LINQ-based)             | Sub-millisecond (inverted index)         |
-| Encryption             | Not built-in                  | Built-in, zero config                    |
+| Encryption             | Built-in                      | Built-in, zero config                    |
 | Native dependencies    | No                            | No                                       |
 | AOT compatibility      | No (uses dynamic expressions) | Yes                                      |
 | Best for               | Document-style queries        | Domain models, encrypted offline storage |
@@ -320,7 +320,7 @@ The result: predictable, consistent performance across Android, iOS, Windows, an
 To understand how OfflineData performs for your specific use case:
 
 ```bash
-dotnet run -c Release --project tests/Plugin.Maui.OfflineData.Benchmarks
+dotnet run -c Release --project tests/Cabinet.Benchmarks
 ```
 
 Adjust:

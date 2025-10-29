@@ -1,6 +1,6 @@
 # Architecture
 
-`Plugin.Maui.OfflineData` is built on three simple ideas:
+`Cabinet` is built on three simple ideas:
 
 1. **Every operation is local** – no dependency on external databases or native libraries.
 2. **Every byte is encrypted** – plaintext never touches disk.

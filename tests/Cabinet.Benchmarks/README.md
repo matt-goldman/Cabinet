@@ -1,6 +1,6 @@
-# Plugin.Maui.OfflineData Benchmarks
+# Cabinet Benchmarks
 
-Performance benchmarking suite for Plugin.Maui.OfflineData.
+Performance benchmarking suite for Cabinet.
 
 ## Running Benchmarks
 
@@ -9,7 +9,7 @@ Performance benchmarking suite for Plugin.Maui.OfflineData.
 Run the simple benchmark suite for fast results:
 
 ```bash
-cd tests/Plugin.Maui.OfflineData.Benchmarks
+cd tests/Cabinet.Benchmarks
 dotnet run -c Release
 ```
 
@@ -20,7 +20,7 @@ This runs both simple benchmarks (one record per file) and structured benchmarks
 For comprehensive performance analysis with statistical rigor, use the BenchmarkDotNet-based benchmarks:
 
 ```bash
-cd tests/Plugin.Maui.OfflineData.Benchmarks
+cd tests/Cabinet.Benchmarks
 dotnet run -c Release --filter "*PersistentIndexBenchmarks*"
 ```
 

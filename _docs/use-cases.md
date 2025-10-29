@@ -1,6 +1,6 @@
 # Use Cases
 
-`Plugin.Maui.OfflineData` is designed for scenarios where you need secure, persistent, searchable local data — but don’t need (or want) a full database engine.
+`Cabinet` is designed for scenarios where you need secure, persistent, searchable local data — but don’t need (or want) a full database engine.
 
 It’s ideal when your app:
 

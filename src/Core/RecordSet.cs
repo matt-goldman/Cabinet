@@ -1,4 +1,4 @@
-namespace Plugin.Maui.OfflineData.Core;
+namespace Cabinet.Core;
 
 /// <summary>
 /// Represents a queryable collection of records from the offline store.

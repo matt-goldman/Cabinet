@@ -1,7 +1,7 @@
 using System.Text.Json;
-using Plugin.Maui.OfflineData.Abstractions;
+using Cabinet.Abstractions;
 
-namespace Plugin.Maui.OfflineData.Core;
+namespace Cabinet.Core;
 
 /// <summary>
 /// A file-based implementation of <see cref="IOfflineStore"/> that stores encrypted records

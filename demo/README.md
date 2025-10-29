@@ -1,6 +1,6 @@
 # OfflineData Demo Application
 
-This demo application showcases the capabilities of Plugin.Maui.OfflineData with real-world usage examples.
+This demo application showcases the capabilities of Cabinet with real-world usage examples.
 
 ## Features Demonstrated
 
@@ -108,7 +108,7 @@ Try searching for:
 
 ## Index Provider
 
-The demo uses `PersistentIndexProvider` from the core plugin (`Plugin.Maui.OfflineData.Index`) which provides:
+The demo uses `PersistentIndexProvider` from the core plugin (`Cabinet.Index`) which provides:
 - **Persistent encrypted search index** stored on disk
 - **Survives app restarts** - no data loss
 - Full-text search with TF-IDF inspired scoring

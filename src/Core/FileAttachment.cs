@@ -1,4 +1,4 @@
-namespace Plugin.Maui.OfflineData.Core;
+namespace Cabinet.Core;
 
 /// <summary>
 /// Represents a file attachment that can be stored alongside a record.

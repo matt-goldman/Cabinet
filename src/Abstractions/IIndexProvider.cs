@@ -1,6 +1,6 @@
-using Plugin.Maui.OfflineData.Core;
+using Cabinet.Core;
 
-namespace Plugin.Maui.OfflineData.Abstractions;
+namespace Cabinet.Abstractions;
 
 /// <summary>
 /// Defines the contract for an index provider that enables full-text search

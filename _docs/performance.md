@@ -52,7 +52,7 @@ This design choice alone transforms OfflineData from “secure and fast enough" 
 ## How to Benchmark Yourself
 
 ```bash
-dotnet run -c Release --project tests/Plugin.Maui.OfflineData.Benchmarks
+dotnet run -c Release --project tests/Cabinet.Benchmarks
 ```
 
 You can adjust:
