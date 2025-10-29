@@ -32,3 +32,15 @@ Console.WriteLine("  - Suitable for: Related data, collections, logical grouping
 Console.WriteLine("  - File count: Much fewer than record count");
 Console.WriteLine("  - Best for: Batch operations, data aggregation");
 Console.WriteLine();
+Console.WriteLine();
+Console.WriteLine();
+Console.WriteLine("=======================================================================");
+Console.WriteLine("Running Competitive Benchmarks (Cabinet vs SQLite vs LiteDB)");
+Console.WriteLine("=======================================================================");
+Console.WriteLine();
+
+await CompetitiveBenchmarks.Run();
+
+Console.WriteLine();
+Console.WriteLine("Benchmarks complete!");
+Console.WriteLine();
