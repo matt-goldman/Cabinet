@@ -1,5 +1,9 @@
 # Cabinet
 
+![NuGet Version](https://img.shields.io/nuget/v/Cabinet?style=for-the-badge)
+
+![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/matt-goldman/cabinet/ci.yml?branch=main&style=for-the-badge)
+
 ![icon](https://raw.githubusercontent.com/matt-goldman/Cabinet/refs/heads/main/assets/icon-256.png)
 
 A secure, indexed offline datastore for .NET.
@@ -131,11 +135,15 @@ Syntactic sugar for cleaner code:
 
 **When to use:** These make your code more readable but are entirely optional.
 
----
-
 ## Quick Start
 
-### Using RecordSet<T> (Recommended)
+### Install the NuGet package
+
+```bash
+dotnet add package Cabinet
+```
+
+### Using `RecordSet<T>` (Recommended)
 
 ```csharp
 using Cabinet;
