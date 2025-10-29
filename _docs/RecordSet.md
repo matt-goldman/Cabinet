@@ -1,4 +1,4 @@
-# RecordSet<T> API
+# `RecordSet<T>` API
 
 The `RecordSet<T>` class provides a fluent, LINQ-style API for querying records from the offline store. It wraps an `IEnumerable<T>` and provides deferred execution with chainable operations.
 
@@ -112,27 +112,33 @@ var results = await store
 ## Available Methods
 
 ### Filtering
+
 - `Where(Func<T, bool> predicate)` - Filter records
 - `WhereMatch(Func<T, bool> predicate)` - Alias for `Where` (for discoverability)
 
 ### Projection
+
 - `Select<TResult>(Func<T, TResult> selector)` - Transform records
 
 ### Sorting
+
 - `OrderBy<TKey>(Func<T, TKey> keySelector)` - Sort ascending
 - `OrderByDescending<TKey>(Func<T, TKey> keySelector)` - Sort descending
 
 ### Pagination
+
 - `Skip(int count)` - Skip records
 - `Take(int count)` - Take records
 
 ### Single Result
+
 - `First()` - First record (throws if empty)
 - `FirstOrDefault()` - First record or default
 - `Single()` - Single record (throws if not exactly one)
 - `SingleOrDefault()` - Single record or default
 
 ### Aggregation
+
 - `Any()` - Check if any records exist
 - `Any(Func<T, bool> predicate)` - Check if any match predicate
 - `All(Func<T, bool> predicate)` - Check if all match predicate
@@ -140,6 +146,7 @@ var results = await store
 - `Count(Func<T, bool> predicate)` - Count matching records
 
 ### Materialization
+
 - `ToList()` - Convert to list
 - `ToArray()` - Convert to array
 - `AsEnumerable()` - Get underlying enumerable

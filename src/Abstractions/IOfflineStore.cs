@@ -6,6 +6,24 @@ namespace Cabinet.Abstractions;
 /// Defines the contract for an offline data store that provides encrypted storage,
 /// retrieval, and search capabilities for structured data.
 /// </summary>
+/// <remarks>
+/// <para>
+/// <strong>For most users:</strong> Use <see cref="RecordSet{T}"/> instead of this interface directly.
+/// RecordSet provides a higher-level, domain-oriented API with automatic caching, CRUD operations,
+/// and simpler file management.
+/// </para>
+/// <para>
+/// <strong>Use IOfflineStore directly only if:</strong>
+/// <list type="bullet">
+/// <item>You need maximum control over storage behavior</item>
+/// <item>You're implementing a custom storage provider</item>
+/// <item>You have specialized requirements not covered by RecordSet</item>
+/// </list>
+/// </para>
+/// <para>
+/// See the documentation for architectural guidance on choosing between RecordSet and IOfflineStore.
+/// </para>
+/// </remarks>
 public interface IOfflineStore
 {
     /// <summary>

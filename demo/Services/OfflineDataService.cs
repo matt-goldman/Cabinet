@@ -59,16 +59,16 @@ public class OfflineDataService(IOfflineStore store)
 		var stopwatch = Stopwatch.StartNew();
 		
 		// Get the offline data directory
-		var offlineDataPath = Path.Combine(FileSystem.AppDataDirectory, "OfflineData");
+		var CabinetPath = Path.Combine(FileSystem.AppDataDirectory, "Cabinet");
 		
 		int filesDeleted = 0;
 		
-		if (Directory.Exists(offlineDataPath))
+		if (Directory.Exists(CabinetPath))
 		{
 			// Delete all files in subdirectories
 			foreach (var subdir in new[] { "records", "attachments", "index" })
 			{
-				var subdirPath = Path.Combine(offlineDataPath, subdir);
+				var subdirPath = Path.Combine(CabinetPath, subdir);
 				if (Directory.Exists(subdirPath))
 				{
 					var files = Directory.GetFiles(subdirPath);

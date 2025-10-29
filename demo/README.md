@@ -1,4 +1,4 @@
-# OfflineData Demo Application
+# Cabinet Demo Application
 
 This demo application showcases the capabilities of Cabinet with real-world usage examples.
 
@@ -115,7 +115,7 @@ The demo uses `PersistentIndexProvider` from the core plugin (`Cabinet.Index`) w
 - Metadata preservation for enhanced search results
 - Atomic writes to prevent corruption
 
-**Storage location:** `/OfflineData/index/search-index.dat` (encrypted)
+**Storage location:** `/Cabinet/index/search-index.dat` (encrypted)
 
 ### Alternative Implementations
 

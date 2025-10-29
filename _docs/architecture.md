@@ -37,7 +37,7 @@ Each file key is derived using HKDF from a master key stored in `SecureStorage`.
 
 ```csharp
 // Pseudocode
-var masterKey = SecureStorage.GetAsync("OfflineData.MasterKey");
+var masterKey = SecureStorage.GetAsync("Cabinet.MasterKey");
 var fileKey = HKDF.Derive(masterKey, fileId);
 ```
 

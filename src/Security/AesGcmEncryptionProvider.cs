@@ -8,16 +8,13 @@ namespace Cabinet.Security;
 /// Provides AES-GCM authenticated encryption for data at rest.
 /// Uses AES-256-GCM with 96-bit nonces and 128-bit authentication tags.
 /// </summary>
-public sealed class AesGcmEncryptionProvider : IEncryptionProvider
+/// <remarks>
+/// Initialises a new instance of the <see cref="AesGcmEncryptionProvider"/> class.
+/// </remarks>
+/// <param name="masterKey">The 256-bit (32-byte) master encryption key</param>
+/// <exception cref="ArgumentException">Thrown if the master key is not 32 bytes</exception>
+public sealed class AesGcmEncryptionProvider(byte[] masterKey) : IEncryptionProvider
 {
-    private readonly byte[] _masterKey;
-
-    /// <summary>
-    /// Initialises a new instance of the <see cref="AesGcmEncryptionProvider"/> class.
-    /// </summary>
-    /// <param name="masterKey">The 256-bit (32-byte) master encryption key</param>
-    /// <exception cref="ArgumentException">Thrown if the master key is not 32 bytes</exception>
-    public AesGcmEncryptionProvider(byte[] masterKey) => _masterKey = masterKey;
 
     /// <inheritdoc/>
     /// <remarks>
@@ -31,7 +28,7 @@ public sealed class AesGcmEncryptionProvider : IEncryptionProvider
         var cipher = new byte[plaintext.Length];
         var tag = new byte[16];
 
-        using var aes = new AesGcm(_masterKey, 16);
+        using var aes = new AesGcm(masterKey, 16);
         aes.Encrypt(nonce, plaintext.Span, cipher, tag, aad);
 
         var result = new byte[nonce.Length + cipher.Length + tag.Length];
@@ -52,10 +49,10 @@ public sealed class AesGcmEncryptionProvider : IEncryptionProvider
         var aad = Encoding.UTF8.GetBytes(context);
         var nonce = ciphertext[..12].ToArray();
         var tag = ciphertext.Slice(ciphertext.Length - 16, 16).ToArray();
-        var enc = ciphertext.Slice(12, ciphertext.Length - 28).ToArray();
+        var enc = ciphertext[12..^16].ToArray();
         var plain = new byte[enc.Length];
 
-        using var aes = new AesGcm(_masterKey, 16);
+        using var aes = new AesGcm(masterKey, 16);
         aes.Decrypt(nonce, enc, tag, plain, aad);
 
         return Task.FromResult(plain);

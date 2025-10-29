@@ -10,14 +10,14 @@ namespace Cabinet.Extensions;
 public static class OfflineStoreExtensions
 {
 	/// <summary>
-	/// Finds records matching the specified search terms and returns their data as a queryable record set.
+	/// Finds records matching the specified search terms and returns their data as a queryable record query.
 	/// This is a convenience method that combines FindAsync with data extraction.
 	/// When multiple terms are provided, performs an OR search (records matching any term).
 	/// </summary>
 	/// <typeparam name="T">The type of records to find</typeparam>
 	/// <param name="store">The offline store to query</param>
 	/// <param name="terms">Search terms to match (OR operation)</param>
-	/// <returns>A queryable record set of matching records</returns>
+	/// <returns>A queryable record query of matching records</returns>
 	/// <example>
 	/// <code>
 	/// var lessons = await store
@@ -27,17 +27,17 @@ public static class OfflineStoreExtensions
 	///     .ToList();
 	/// </code>
 	/// </example>
-	public static async Task<RecordSet<T>> FindManyAsync<T>(
+	public static async Task<RecordQuery<T>> FindManyAsync<T>(
 		this IOfflineStore store,
 		params string[] terms)
 	{
 		if (terms.Length == 0)
-			return new RecordSet<T>(Enumerable.Empty<T>());
+			return new RecordQuery<T>([]);
 
 		if (terms.Length == 1)
 		{
 			var results = await store.FindAsync<T>(terms[0]);
-			return new RecordSet<T>(results.Select(r => r.Data));
+			return new RecordQuery<T>(results.Select(r => r.Data));
 		}
 
 		// For multiple terms, perform parallel queries and combine results
@@ -53,17 +53,17 @@ public static class OfflineStoreExtensions
 			}
 		}
 
-		return new RecordSet<T>(allResults.Values);
+		return new RecordQuery<T>(allResults.Values);
 	}
 
 	/// <summary>
-	/// Applies an additional predicate filter to a record set.
-	/// This is syntactic sugar over RecordSet's Where() for clearer intent in chained queries.
+	/// Applies an additional predicate filter to a record query.
+	/// This is syntactic sugar over RecordQuery's Where() for clearer intent in chained queries.
 	/// </summary>
-	/// <typeparam name="T">The type of items in the record set</typeparam>
-	/// <param name="source">The source record set</param>
+	/// <typeparam name="T">The type of items in the record query</typeparam>
+	/// <param name="source">The source record query</param>
 	/// <param name="predicate">The filter predicate</param>
-	/// <returns>Filtered record set</returns>
+	/// <returns>Filtered record query</returns>
 	/// <example>
 	/// <code>
 	/// var results = await store
@@ -73,8 +73,8 @@ public static class OfflineStoreExtensions
 	///     .ToList();
 	/// </code>
 	/// </example>
-	public static RecordSet<T> WhereMatch<T>(
-		this RecordSet<T> source,
+	public static RecordQuery<T> WhereMatch<T>(
+		this RecordQuery<T> source,
 		Func<T, bool> predicate)
 		=> source.Where(predicate);
 
@@ -108,7 +108,7 @@ public static class OfflineStoreExtensions
 	/// <param name="store">The offline store to query</param>
 	/// <param name="predicate">The filter predicate to apply</param>
 	/// <param name="terms">Search terms to match (OR operation)</param>
-	/// <returns>A queryable record set of matching, filtered records</returns>
+	/// <returns>A queryable record query of matching, filtered records</returns>
 	/// <example>
 	/// <code>
 	/// var mathsLessons = await store
@@ -119,7 +119,7 @@ public static class OfflineStoreExtensions
 	///     .ToList();
 	/// </code>
 	/// </example>
-	public static async Task<RecordSet<T>> FindWhereAsync<T>(
+	public static async Task<RecordQuery<T>> FindWhereAsync<T>(
 		this IOfflineStore store,
 		Func<T, bool> predicate,
 		params string[] terms)

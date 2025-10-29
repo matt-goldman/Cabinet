@@ -137,7 +137,7 @@ public sealed class FileOfflineStore : IOfflineStore
                 return typedResults;
             }
         }
-        catch (System.Text.Json.JsonException)
+        catch (JsonException)
         {
             // If it fails, try as IList<T> (aggregate file pattern)
         }
@@ -159,7 +159,7 @@ public sealed class FileOfflineStore : IOfflineStore
                 }
             }
         }
-        catch (System.Text.Json.JsonException)
+        catch (JsonException)
         {
             // Neither T nor List<T> worked, skip this result
         }

@@ -12,7 +12,7 @@
             Spacing="25">
 
             <Label
-                Text="OfflineData Benchmarks"
+                Text="Cabinet Benchmarks"
                 Style="{StaticResource Headline}"
                 SemanticProperties.HeadingLevel="Level1" />
 
