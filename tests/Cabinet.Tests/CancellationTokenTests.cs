@@ -18,8 +18,7 @@ public class CancellationTokenTests : IDisposable
 		_testRootPath = Path.Combine(Path.GetTempPath(), $"CancellationTokenTests_{Guid.NewGuid()}");
 		Directory.CreateDirectory(_testRootPath);
 
-		_testKey = new byte[32];
-		Random.Shared.NextBytes(_testKey);
+		_testKey = System.Security.Cryptography.RandomNumberGenerator.GetBytes(32);
 	}
 
 	public void Dispose()
