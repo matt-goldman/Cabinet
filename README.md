@@ -68,7 +68,102 @@ If you’ve ever used IndexedDB in the browser, you can think of this as Indexed
 Tests measure saving and indexing the _entire dataset_, not single-record inserts.
 For incremental operations, performance is effectively instantaneous.
 
-## Quick start
+## Architecture: Three Layers
+
+Cabinet has a layered architecture that lets you choose your level of control:
+
+### Layer 1: Core Storage (Advanced Users)
+
+The foundational layer provides low-level encrypted storage:
+
+- `IOfflineStore` - Core encrypted storage operations
+- `IEncryptionProvider` - Pluggable encryption (default: AES-256-GCM)
+- `IIndexProvider` - Pluggable full-text search
+
+**When to use:** You need maximum control over storage behavior, custom encryption, or specialized indexing.
+
+### Layer 2: RecordSet API (🎯 Start Here - Most Users)
+
+The high-level domain abstraction that makes Cabinet feel like a document database:
+
+- `RecordSet<T>` - Manages collections of typed records with auto-caching and CRUD operations
+- `RecordQuery<T>` - LINQ-style fluent queries
+- `RecordCollection<T>` - Scoped collections under a single ID
+
+**When to use:** This is the recommended API for 95% of scenarios. It handles file discovery, loading, caching, and persistence automatically.
+
+**Example:**
+```csharp
+// Setup (once at app startup)
+var store = /* ... see Layer 1 for setup ... */;
+
+// Create a RecordSet for your domain type
+var lessons = new RecordSet<LessonRecord>(store, new RecordSetOptions<LessonRecord>
+{
+    IdSelector = lesson => lesson.LessonId  // For AOT compatibility
+});
+
+// Load all lessons into memory cache
+await lessons.LoadAsync();
+
+// Add a new lesson (auto-persists to disk)
+await lessons.AddAsync(new LessonRecord
+{
+    LessonId = "lesson-001",
+    Subject = "Science",
+    Description = "Observed seagulls at the beach"
+});
+
+// Query cached data (no disk I/O)
+var scienceLessons = lessons.Where(l => l.Subject == "Science");
+var recentLessons = lessons.OrderByDescending(l => l.Date).Take(10);
+
+// Search using encrypted index
+var results = await lessons.FindAsync("seagulls");
+```
+
+### Layer 3: Extension Methods (Convenience)
+
+Syntactic sugar for cleaner code:
+
+- `FindManyAsync()` - Search with automatic data extraction
+- `WhereMatch()` - Fluent filter chaining
+
+**When to use:** These make your code more readable but are entirely optional.
+
+---
+
+## Quick Start
+
+### Using RecordSet<T> (Recommended)
+
+```csharp
+using Cabinet;
+using Cabinet.Core;
+using Cabinet.Security;
+
+// 1. Setup storage (once at app startup)
+var masterKey = new byte[32];
+RandomNumberGenerator.Fill(masterKey);
+// In production, store this in SecureStorage
+
+var encryption = new AesGcmEncryptionProvider(masterKey);
+var store = new FileOfflineStore(FileSystem.AppDataDirectory, encryption);
+
+// 2. Create RecordSet for your domain type
+var options = new RecordSetOptions<LessonRecord>
+{
+    IdSelector = lesson => lesson.LessonId  // AOT-safe
+};
+var lessons = new RecordSet<LessonRecord>(store, options);
+
+// 3. Load and use
+await lessons.LoadAsync();
+await lessons.AddAsync(new LessonRecord { LessonId = "001", Subject = "Science" });
+var all = await lessons.GetAllAsync();
+```
+
+### Using IOfflineStore Directly (Advanced)
 
 ```csharp
 using Cabinet;
@@ -78,7 +173,6 @@ using Cabinet.Security;
 // Generate or retrieve a master encryption key (32 bytes)
 var masterKey = new byte[32];
 RandomNumberGenerator.Fill(masterKey);
-// In production, store this key securely using SecureStorage
 
 var encryption = new AesGcmEncryptionProvider(masterKey);
 var index = new PersistentIndexProvider(FileSystem.AppDataDirectory, encryption);
@@ -95,7 +189,7 @@ await store.SaveAsync("lesson-2025-10-27", new LessonRecord {
 });
 
 // Search
-var results = await store.FindAsync("seagulls");
+var results = await store.FindAsync<LessonRecord>("seagulls");
 ```
 
 ## Extensibility
