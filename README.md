@@ -170,7 +170,7 @@ var store = CabinetStoreExtensions.CreateCabinetStore(
     FileSystem.AppDataDirectory, 
     masterKey);
 
-var lessons = store.CreateRecordSet<LessonRecord>();
+RecordSet<LessonRecord> lessons => new(store);
 
 // 3. Load and use
 await lessons.LoadAsync();
