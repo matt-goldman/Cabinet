@@ -137,7 +137,7 @@ Syntactic sugar for cleaner code:
 
 ## Quick Start
 
-### Install the nuget package
+### Install the NuGet package
 
 ```bash
 dotnet add package Cabinet
