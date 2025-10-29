@@ -5,26 +5,19 @@ namespace Cabinet.Core;
 /// Provides LINQ-style fluent operations with deferred execution.
 /// </summary>
 /// <typeparam name="T">The type of records in the set</typeparam>
-public sealed class RecordSet<T>
+/// <remarks>
+/// Creates a new record set from an enumerable source.
+/// </remarks>
+/// <param name="source">The source collection of records</param>
+public sealed class RecordSet<T>(IEnumerable<T> source)
 {
-	private readonly IEnumerable<T> _source;
-
-	/// <summary>
-	/// Creates a new record set from an enumerable source.
-	/// </summary>
-	/// <param name="source">The source collection of records</param>
-	public RecordSet(IEnumerable<T> source)
-	{
-		_source = source ?? throw new ArgumentNullException(nameof(source));
-	}
-
-	/// <summary>
-	/// Filters the record set based on a predicate.
-	/// </summary>
-	/// <param name="predicate">The filter predicate</param>
-	/// <returns>A new record set with filtered records</returns>
-	public RecordSet<T> Where(Func<T, bool> predicate)
-		=> new(_source.Where(predicate));
+    /// <summary>
+    /// Filters the record set based on a predicate.
+    /// </summary>
+    /// <param name="predicate">The filter predicate</param>
+    /// <returns>A new record set with filtered records</returns>
+    public RecordSet<T> Where(Func<T, bool> predicate)
+		=> new(source.Where(predicate));
 
 	/// <summary>
 	/// Projects each record to a new form.
@@ -33,7 +26,7 @@ public sealed class RecordSet<T>
 	/// <param name="selector">The projection function</param>
 	/// <returns>A new record set with projected records</returns>
 	public RecordSet<TResult> Select<TResult>(Func<T, TResult> selector)
-		=> new(_source.Select(selector));
+		=> new(source.Select(selector));
 
 	/// <summary>
 	/// Sorts the records in ascending order by a key.
@@ -42,7 +35,7 @@ public sealed class RecordSet<T>
 	/// <param name="keySelector">The key selector function</param>
 	/// <returns>A new record set with sorted records</returns>
 	public RecordSet<T> OrderBy<TKey>(Func<T, TKey> keySelector)
-		=> new(_source.OrderBy(keySelector));
+		=> new(source.OrderBy(keySelector));
 
 	/// <summary>
 	/// Sorts the records in descending order by a key.
@@ -51,7 +44,7 @@ public sealed class RecordSet<T>
 	/// <param name="keySelector">The key selector function</param>
 	/// <returns>A new record set with sorted records</returns>
 	public RecordSet<T> OrderByDescending<TKey>(Func<T, TKey> keySelector)
-		=> new(_source.OrderByDescending(keySelector));
+		=> new(source.OrderByDescending(keySelector));
 
 	/// <summary>
 	/// Bypasses a specified number of records.
@@ -59,7 +52,7 @@ public sealed class RecordSet<T>
 	/// <param name="count">The number of records to skip</param>
 	/// <returns>A new record set with remaining records</returns>
 	public RecordSet<T> Skip(int count)
-		=> new(_source.Skip(count));
+		=> new(source.Skip(count));
 
 	/// <summary>
 	/// Takes a specified number of records.
@@ -67,35 +60,35 @@ public sealed class RecordSet<T>
 	/// <param name="count">The number of records to take</param>
 	/// <returns>A new record set with limited records</returns>
 	public RecordSet<T> Take(int count)
-		=> new(_source.Take(count));
+		=> new(source.Take(count));
 
 	/// <summary>
 	/// Returns the first record, or throws if the sequence is empty.
 	/// </summary>
 	/// <returns>The first record</returns>
 	public T First()
-		=> _source.First();
+		=> source.First();
 
 	/// <summary>
 	/// Returns the first record, or default if the sequence is empty.
 	/// </summary>
 	/// <returns>The first record or default</returns>
 	public T? FirstOrDefault()
-		=> _source.FirstOrDefault();
+		=> source.FirstOrDefault();
 
 	/// <summary>
 	/// Returns the only record, or throws if there is not exactly one record.
 	/// </summary>
 	/// <returns>The single record</returns>
 	public T Single()
-		=> _source.Single();
+		=> source.Single();
 
 	/// <summary>
 	/// Returns the only record, or default if the sequence is empty or has multiple records.
 	/// </summary>
 	/// <returns>The single record or default</returns>
 	public T? SingleOrDefault()
-		=> _source.SingleOrDefault();
+		=> source.SingleOrDefault();
 
 	/// <summary>
 	/// Determines whether any records match a predicate.
@@ -103,14 +96,14 @@ public sealed class RecordSet<T>
 	/// <param name="predicate">The predicate to test</param>
 	/// <returns>True if any records match, false otherwise</returns>
 	public bool Any(Func<T, bool> predicate)
-		=> _source.Any(predicate);
+		=> source.Any(predicate);
 
 	/// <summary>
 	/// Determines whether any records exist.
 	/// </summary>
 	/// <returns>True if any records exist, false otherwise</returns>
 	public bool Any()
-		=> _source.Any();
+		=> source.Any();
 
 	/// <summary>
 	/// Determines whether all records match a predicate.
@@ -118,14 +111,14 @@ public sealed class RecordSet<T>
 	/// <param name="predicate">The predicate to test</param>
 	/// <returns>True if all records match, false otherwise</returns>
 	public bool All(Func<T, bool> predicate)
-		=> _source.All(predicate);
+		=> source.All(predicate);
 
 	/// <summary>
 	/// Counts the number of records.
 	/// </summary>
 	/// <returns>The total count</returns>
 	public int Count()
-		=> _source.Count();
+		=> source.Count();
 
 	/// <summary>
 	/// Counts the number of records matching a predicate.
@@ -133,26 +126,26 @@ public sealed class RecordSet<T>
 	/// <param name="predicate">The predicate to test</param>
 	/// <returns>The count of matching records</returns>
 	public int Count(Func<T, bool> predicate)
-		=> _source.Count(predicate);
+		=> source.Count(predicate);
 
 	/// <summary>
 	/// Converts the record set to a list.
 	/// </summary>
 	/// <returns>A list containing all records</returns>
 	public List<T> ToList()
-		=> _source.ToList();
+		=> [.. source];
 
 	/// <summary>
 	/// Converts the record set to an array.
 	/// </summary>
 	/// <returns>An array containing all records</returns>
 	public T[] ToArray()
-		=> _source.ToArray();
+		=> [.. source];
 
 	/// <summary>
 	/// Gets the underlying enumerable source.
 	/// </summary>
 	/// <returns>The source enumerable</returns>
 	public IEnumerable<T> AsEnumerable()
-		=> _source;
+		=> source;
 }

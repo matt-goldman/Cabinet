@@ -32,7 +32,7 @@ public static class OfflineStoreExtensions
 		params string[] terms)
 	{
 		if (terms.Length == 0)
-			return new RecordSet<T>(Enumerable.Empty<T>());
+			return new RecordSet<T>([]);
 
 		if (terms.Length == 1)
 		{
