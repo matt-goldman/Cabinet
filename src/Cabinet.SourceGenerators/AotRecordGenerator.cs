@@ -73,7 +73,7 @@ public class AotRecordGenerator : IIncrementalGenerator
 		// If explicit name is specified, use it
 		if (!string.IsNullOrEmpty(explicitName))
 		{
-			return classSymbol.GetMembers(explicitName)
+			return classSymbol.GetMembers(explicitName!)
 				.OfType<IPropertySymbol>()
 				.FirstOrDefault();
 		}

@@ -57,6 +57,7 @@ If you’ve ever used IndexedDB in the browser, you can think of this as Indexed
 * Persistent encrypted full-text index
 * Atomic writes (no plaintext ever on disk)
 * JSON serialisation (customisable)
+* **Source generator for AOT compilation** (automatic JSON context and IdSelector generation)
 * Extensible architecture (BYO store, index, encryption)
 * 100% managed .NET, AOT-safe, no native dependencies
 
@@ -143,7 +144,47 @@ Syntactic sugar for cleaner code:
 dotnet add package Cabinet
 ```
 
-### Using `RecordSet<T>` (Recommended)
+### Using Source Generator (Easiest for AOT)
+
+Decorate your record classes with `[AotRecord]` for automatic AOT setup:
+
+```csharp
+using Cabinet;
+
+// 1. Decorate your record types
+[AotRecord]
+public class LessonRecord
+{
+    public string LessonRecordId { get; set; } = "";
+    public string Subject { get; set; } = "";
+    public string Description { get; set; } = "";
+}
+
+// 2. Use generated extensions
+using Cabinet.Generated;
+
+var masterKey = new byte[32];
+RandomNumberGenerator.Fill(masterKey);
+
+var store = CabinetStoreExtensions.CreateCabinetStore(
+    FileSystem.AppDataDirectory, 
+    masterKey);
+
+var lessons = store.CreateRecordSet<LessonRecord>();
+
+// 3. Load and use
+await lessons.LoadAsync();
+await lessons.AddAsync(new LessonRecord { 
+    LessonRecordId = "001", 
+    Subject = "Science",
+    Description = "Observed seagulls at the beach"
+});
+var all = await lessons.GetAllAsync();
+```
+
+See [Source Generator Guide](_docs/source-generator-example.md) for more details.
+
+### Using `RecordSet<T>` (Manual Setup)
 
 ```csharp
 using Cabinet;
