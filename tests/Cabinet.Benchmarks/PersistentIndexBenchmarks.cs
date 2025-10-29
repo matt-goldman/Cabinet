@@ -1,10 +1,10 @@
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Order;
-using Plugin.Maui.OfflineData.Core;
-using Plugin.Maui.OfflineData.Index;
-using Plugin.Maui.OfflineData.Security;
+using Cabinet.Core;
+using Cabinet.Index;
+using Cabinet.Security;
 
-namespace Plugin.Maui.OfflineData.Benchmarks;
+namespace Cabinet.Benchmarks;
 
 /// <summary>
 /// Benchmarks for PersistentIndexProvider with various dataset sizes.

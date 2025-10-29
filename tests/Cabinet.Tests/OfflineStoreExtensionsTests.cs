@@ -1,9 +1,9 @@
-using Plugin.Maui.OfflineData.Abstractions;
-using Plugin.Maui.OfflineData.Core;
-using Plugin.Maui.OfflineData.Extensions;
-using Plugin.Maui.OfflineData.Security;
+using Cabinet.Abstractions;
+using Cabinet.Core;
+using Cabinet.Extensions;
+using Cabinet.Security;
 
-namespace Plugin.Maui.OfflineData.Tests;
+namespace Cabinet.Tests;
 
 /// <summary>
 /// Tests for LINQ-style extension methods on IOfflineStore.

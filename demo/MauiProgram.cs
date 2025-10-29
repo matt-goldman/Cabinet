@@ -1,10 +1,10 @@
 ﻿using demo.Services;
 using demo.ViewModels;
 using Microsoft.Extensions.Logging;
-using Plugin.Maui.OfflineData.Abstractions;
-using Plugin.Maui.OfflineData.Core;
-using Plugin.Maui.OfflineData.Index;
-using Plugin.Maui.OfflineData.Security;
+using Cabinet.Abstractions;
+using Cabinet.Core;
+using Cabinet.Index;
+using Cabinet.Security;
 using System.Security.Cryptography;
 
 namespace demo;

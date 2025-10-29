@@ -1,8 +1,8 @@
-# GitHub Copilot Instructions for Plugin.Maui.OfflineData
+# GitHub Copilot Instructions for Cabinet
 
 ## Project Overview
 
-Plugin.Maui.OfflineData is a lightweight, encrypted offline data layer for .NET MAUI applications. It provides structured file storage with encryption at rest, full-text search capabilities, and cross-platform reliability without requiring native database dependencies like SQLite or Realm.
+Cabinet is a lightweight, encrypted offline data layer for .NET applications, primarily .NET MAUI but useful for other .NET platforms as well. It provides structured file storage with encryption at rest, full-text search capabilities, and cross-platform reliability without requiring native database dependencies like SQLite or Realm.
 
 **Key characteristics:**
 - Pure .NET implementation
@@ -48,7 +48,7 @@ src/
 - **Minimum .NET version: .NET 9**
 - **Never downgrade .NET versions**
 - Development environments must always be upgraded to use .NET 9 or later
-- The project targets: `net9.0`, `net9.0-android`, `net9.0-ios`, `net9.0-maccatalyst`, `net9.0-windows10.0.19041.0`
+- The project targets: `net9.0`
 
 ### Code Style and Formatting
 

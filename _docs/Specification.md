@@ -1,4 +1,4 @@
-# Plugin.Maui.OfflineData — Specification (Draft)
+# Cabinet — Specification (Draft)
 
 ## Purpose
 
@@ -94,7 +94,7 @@ The core plugin includes `PersistentIndexProvider` — a production-ready, encry
 * .NET 10 (.NET 9 for development temporarily)
 * System.Security.Cryptography
 * Optional: Microsoft.Maui.Storage (for SecureStorage)
-* Optional: Plugin.Maui.OfflineData.Indexing (the index engine)
+* Optional: Cabinet.Indexing (the index engine)
 
 ## Extensibility
 
@@ -111,9 +111,9 @@ The core plugin includes `PersistentIndexProvider` — a production-ready, encry
 ## Example
 
 ```csharp
-using Plugin.Maui.OfflineData;
-using Plugin.Maui.OfflineData.Index;
-using Plugin.Maui.OfflineData.Security;
+using Cabinet;
+using Cabinet.Index;
+using Cabinet.Security;
 
 var encryptionProvider = new AesGcmEncryptionProvider();
 var indexProvider = new PersistentIndexProvider(

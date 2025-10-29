@@ -1,0 +1,60 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+  workflow_dispatch:
+
+jobs:
+  
+  generate-version:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: GitHub Tag Bump
+        id: tag_bump
+        uses: anothrNick/github-tag-action@1.73.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          INITIAL_VERSION: 1.0.0
+          DEFAULT_BUMP: 'patch'
+
+    outputs:
+      new_version: ${{ steps.tag_bump.outputs.new_tag }}
+
+  build:
+    needs: generate-version
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Build
+        run: |
+          dotnet build src/Cabinet.csproj --configuration Release
+
+      - name: Pack
+        run: |
+          dotnet pack src/Cabinet.csproj \
+            --configuration Release \
+            --no-build \
+            -p:PackageVersion=${{ needs.generate-version.outputs.new_version }} \
+            -o packages
+
+      - name: Push to NuGet
+        run: |
+          dotnet nuget push packages/*.nupkg \
+            --api-key ${{ secrets.NUGET_API_KEY }} \
+            --source https://api.nuget.org/v3/index.json \
+            --skip-duplicate

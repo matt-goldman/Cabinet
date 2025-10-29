@@ -1,6 +1,6 @@
 # API Reference
 
-This document provides a comprehensive reference for the core interfaces, classes, and extension points in `Plugin.Maui.OfflineData`.
+This document provides a comprehensive reference for the core interfaces, classes, and extension points in `Cabinet`.
 
 ## Core Interfaces
 
@@ -313,9 +313,9 @@ var mathsLessons = await store
 ### Basic Setup
 
 ```csharp
-using Plugin.Maui.OfflineData;
-using Plugin.Maui.OfflineData.Index;
-using Plugin.Maui.OfflineData.Security;
+using Cabinet;
+using Cabinet.Index;
+using Cabinet.Security;
 
 // Generate or retrieve a master key
 var masterKey = new byte[32];

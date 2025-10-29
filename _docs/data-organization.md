@@ -104,4 +104,4 @@ The difference comes purely from file count, not encryption overhead.
 
 You don’t need a database to have fast, reliable offline persistence.
 You need a good data model and a storage layer that makes the secure path the easy path.
-That’s what `Plugin.Maui.OfflineData` is designed for.
+That’s what `Cabinet` is designed for.

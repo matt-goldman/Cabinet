@@ -1,10 +1,10 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using Plugin.Maui.OfflineData.Core;
-using Plugin.Maui.OfflineData.Index;
-using Plugin.Maui.OfflineData.Security;
+using Cabinet.Core;
+using Cabinet.Index;
+using Cabinet.Security;
 
-namespace Plugin.Maui.OfflineData.Benchmarks;
+namespace Cabinet.Benchmarks;
 
 /// <summary>
 /// Simple benchmark runner for quick performance tests.
@@ -14,7 +14,7 @@ public static class SimpleBenchmarks
 {
 	public static async Task Run()
 	{
-		Console.WriteLine("Plugin.Maui.OfflineData Performance Benchmarks");
+		Console.WriteLine("Cabinet Performance Benchmarks");
 		Console.WriteLine("===============================================");
 		Console.WriteLine();
 

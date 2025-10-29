@@ -1,4 +1,4 @@
-namespace Plugin.Maui.OfflineData.Utilities;
+namespace Cabinet.Utilities;
 
 /// <summary>
 /// Provides extension methods for file path operations.

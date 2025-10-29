@@ -1,6 +1,6 @@
-# Plugin.Maui.OfflineData Tests
+# Cabinet Tests
 
-This test project contains comprehensive unit and integration tests for the Plugin.Maui.OfflineData library.
+This test project contains comprehensive unit and integration tests for the Cabinet library.
 
 ## Test Structure
 

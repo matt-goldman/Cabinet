@@ -26,13 +26,13 @@ jobs:
           dotnet-version: '9.0.x'
 
       - name: Restore dependencies
-        run: dotnet restore tests/Plugin.Maui.OfflineData.Tests/Plugin.Maui.OfflineData.Tests.csproj
+        run: dotnet restore tests/Cabinet.Tests/Cabinet.Tests.csproj
 
       - name: Build solution
-        run: dotnet build tests/Plugin.Maui.OfflineData.Tests/Plugin.Maui.OfflineData.Tests.csproj --no-restore --configuration Release
+        run: dotnet build tests/Cabinet.Tests/Cabinet.Tests.csproj --no-restore --configuration Release
 
       - name: Run tests
-        run: dotnet test tests/Plugin.Maui.OfflineData.Tests/Plugin.Maui.OfflineData.Tests.csproj --no-build --configuration Release --verbosity normal --logger "trx;LogFileName=test-results.trx"
+        run: dotnet test tests/Cabinet.Tests/Cabinet.Tests.csproj --no-build --configuration Release --verbosity normal --logger "trx;LogFileName=test-results.trx"
 
       - name: Upload test results
         if: always()

@@ -1,7 +1,7 @@
-using Plugin.Maui.OfflineData.Abstractions;
-using Plugin.Maui.OfflineData.Core;
+using Cabinet.Abstractions;
+using Cabinet.Core;
 
-namespace Plugin.Maui.OfflineData.Tests;
+namespace Cabinet.Tests;
 
 /// <summary>
 /// Tests for IIndexProvider integration.

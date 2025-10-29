@@ -1,6 +1,6 @@
-using Plugin.Maui.OfflineData.Core;
+using Cabinet.Core;
 
-namespace Plugin.Maui.OfflineData.Tests;
+namespace Cabinet.Tests;
 
 /// <summary>
 /// Tests for RecordSet<T> fluent LINQ-style API.

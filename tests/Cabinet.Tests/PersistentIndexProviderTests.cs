@@ -1,8 +1,8 @@
-using Plugin.Maui.OfflineData.Abstractions;
-using Plugin.Maui.OfflineData.Index;
-using Plugin.Maui.OfflineData.Security;
+using Cabinet.Abstractions;
+using Cabinet.Index;
+using Cabinet.Security;
 
-namespace Plugin.Maui.OfflineData.Tests;
+namespace Cabinet.Tests;
 
 /// <summary>
 /// Tests for PersistentIndexProvider to verify encrypted persistent indexing functionality.

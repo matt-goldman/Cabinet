@@ -1,8 +1,8 @@
 using System.Security.Cryptography;
 using System.Text;
-using Plugin.Maui.OfflineData.Abstractions;
+using Cabinet.Abstractions;
 
-namespace Plugin.Maui.OfflineData.Security;
+namespace Cabinet.Security;
 
 /// <summary>
 /// Provides AES-GCM authenticated encryption for data at rest.

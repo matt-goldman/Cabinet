@@ -1,7 +1,7 @@
-using Plugin.Maui.OfflineData.Abstractions;
-using Plugin.Maui.OfflineData.Core;
+using Cabinet.Abstractions;
+using Cabinet.Core;
 
-namespace Plugin.Maui.OfflineData.Extensions;
+namespace Cabinet.Extensions;
 
 /// <summary>
 /// Extension methods for IOfflineStore that provide LINQ-style querying capabilities.

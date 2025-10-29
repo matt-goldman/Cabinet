@@ -1,12 +1,12 @@
 # Architecture
 
-`Plugin.Maui.OfflineData` is built on three simple ideas:
+`Cabinet` is built on three simple ideas:
 
 1. **Every operation is local** – no dependency on external databases or native libraries.
 2. **Every byte is encrypted** – plaintext never touches disk.
 3. **Every abstraction is replaceable** – storage, indexing, and encryption are all extensible.
 
-It’s a secure, indexed, offline data layer for MAUI that treats persistence as a first-class concern rather than a bolt-on.
+It’s a secure, indexed, offline data layer for .NET that treats persistence as a first-class concern rather than a bolt-on.
 
 ## Core Components
 

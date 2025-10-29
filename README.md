@@ -1,6 +1,8 @@
-# Plugin.Maui.OfflineData
+# Cabinet
 
-A secure, indexed offline datastore for .NET MAUI.
+![icon](/assets/icon-256.png)
+
+A secure, indexed offline datastore for .NET.
 It’s the simplest way to persist structured data locally - encrypted, searchable, and AOT-safe - without the complexity of a traditional database.
 
 ## Why
@@ -14,7 +16,7 @@ Traditional solutions like SQLite or LiteDB are excellent tools, but they bring 
 * Configuration overhead (SQLite encryption - which has commercial implications too)
 * API friction for what often boils down to “store, query, retrieve”
 
-`Plugin.Maui.OfflineData` was created to solve that problem.
+`Cabinet` was created to solve that problem.
 
 It gives you database-like capabilities without the database:
 encryption, indexing, fast lookups, and predictable performance — all in pure .NET.
@@ -42,7 +44,7 @@ If you think you need a mobile database, you might actually need this.
 | A cloud sync engine   | Data lives locally; sync is up to you.                                     |
 | A toy                 | It’s built for production use: encrypted, indexed, and tested under load. |
 
-If you’ve ever used IndexedDB in the browser, you can think of this as IndexedDB for MAUI, but simpler, safer, and designed for .NET idioms.
+If you’ve ever used IndexedDB in the browser, you can think of this as IndexedDB for standalone .NET projects, but simpler, safer, and designed for .NET idioms.
 
 ## Features
 
@@ -56,7 +58,7 @@ If you’ve ever used IndexedDB in the browser, you can think of this as Indexed
 
 ## Performance Summary
 
-`Plugin.Maui.OfflineData` offers consistent, predictable performance, even with encryption.
+`Cabinet` offers consistent, predictable performance, even with encryption.
 
 | **Pattern**     | **Records** | **Operation**            | **Duration** | **Search (avg)** | **Cold Start** |
 | --------------- | ----------- | ------------------------ | ------------ | ---------------- | -------------- |
@@ -69,9 +71,9 @@ For incremental operations, performance is effectively instantaneous.
 ## Quick start
 
 ```csharp
-using Plugin.Maui.OfflineData;
-using Plugin.Maui.OfflineData.Index;
-using Plugin.Maui.OfflineData.Security;
+using Cabinet;
+using Cabinet.Index;
+using Cabinet.Security;
 
 // Generate or retrieve a master encryption key (32 bytes)
 var masterKey = new byte[32];

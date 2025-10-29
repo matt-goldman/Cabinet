@@ -1,4 +1,4 @@
-namespace Plugin.Maui.OfflineData.Abstractions;
+namespace Cabinet.Abstractions;
 
 /// <summary>
 /// Defines the contract for an encryption provider that handles authenticated encryption

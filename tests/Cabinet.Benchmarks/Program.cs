@@ -1,4 +1,4 @@
-using Plugin.Maui.OfflineData.Benchmarks;
+using Cabinet.Benchmarks;
 
 Console.WriteLine("=======================================================================");
 Console.WriteLine("Running Simple Benchmarks (one record per file)");

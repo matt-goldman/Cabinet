@@ -1,10 +1,10 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using Plugin.Maui.OfflineData.Core;
-using Plugin.Maui.OfflineData.Index;
-using Plugin.Maui.OfflineData.Security;
+using Cabinet.Core;
+using Cabinet.Index;
+using Cabinet.Security;
 
-namespace Plugin.Maui.OfflineData.Benchmarks;
+namespace Cabinet.Benchmarks;
 
 /// <summary>
 /// Structured benchmark runner for aggregate record files.
@@ -15,7 +15,7 @@ public static class StructuredBenchmarks
 {
 	public static async Task Run()
 	{
-		Console.WriteLine("Plugin.Maui.OfflineData Structured Benchmarks");
+		Console.WriteLine("Cabinet Structured Benchmarks");
 		Console.WriteLine("==============================================");
 		Console.WriteLine("Testing aggregate record files (multiple records per file)");
 		Console.WriteLine();
