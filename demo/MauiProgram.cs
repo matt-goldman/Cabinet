@@ -25,7 +25,7 @@ public static class MauiProgram
 		// Configure offline data store
 		builder.Services.AddSingleton<IOfflineStore>(sp =>
 		{
-            var OfflineKey = SecureStorage.GetAsync("OfflineDataMasterKey").GetAwaiter().GetResult();
+            var OfflineKey = SecureStorage.GetAsync("CabinetMasterKey").GetAwaiter().GetResult();
 
             byte[] masterKey;
 
@@ -35,7 +35,7 @@ public static class MauiProgram
                 var newKey = new byte[32];
                 RandomNumberGenerator.Fill(newKey);
                 OfflineKey = Convert.ToBase64String(newKey);
-                SecureStorage.SetAsync("OfflineDataMasterKey", OfflineKey).GetAwaiter().GetResult();
+                SecureStorage.SetAsync("CabinetMasterKey", OfflineKey).GetAwaiter().GetResult();
 
                 masterKey = newKey;
             }
@@ -45,7 +45,7 @@ public static class MauiProgram
             }
 
             var encryptionProvider = new AesGcmEncryptionProvider(masterKey);
-            var rootPath = Path.Combine(FileSystem.AppDataDirectory, "OfflineData");
+            var rootPath = Path.Combine(FileSystem.AppDataDirectory, "Cabinet");
 
             // Use persistent index provider that stores encrypted index to disk
             var indexProvider = new PersistentIndexProvider(rootPath, encryptionProvider);

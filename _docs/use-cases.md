@@ -21,7 +21,7 @@ Examples:
 * Field service apps that record inspections or maintenance logs with attachments.
 * Healthcare or client apps capturing sensitive data offline for later sync.
 
-OfflineData provides this with:
+Cabinet provides this with:
 
 * AES-256-GCM encryption per file
 * HKDF-derived per-file keys
@@ -32,7 +32,7 @@ Your users’ data never leaves the device unencrypted.
 
 ## 2. Encrypted Personal Data Stores
 
-For apps that need to persist personal information locally (e.g., task lists, personal logs, or password-like data), OfflineData functions as an encrypted vault.
+For apps that need to persist personal information locally (e.g., task lists, personal logs, or password-like data), Cabinet functions as an encrypted vault.
 
 You can:
 
@@ -46,7 +46,7 @@ All data remains encrypted on disk, even when the device is compromised.
 
 Apps that serve structured but immutable data (like e-books, documentation, or reference material) can pre-package datasets as `.dat` files.
 
-OfflineData can index these for search while keeping them encrypted.
+Cabinet can index these for search while keeping them encrypted.
 
 Example:
 
@@ -55,7 +55,7 @@ Example:
 
 ## 4. Hybrid Offline/Online Scenarios
 
-OfflineData works well in apps that sync data periodically but need local performance and privacy between syncs.
+Cabinet works well in apps that sync data periodically but need local performance and privacy between syncs.
 
 It can complement cloud sync or Graph API backends by:
 
@@ -68,7 +68,7 @@ Allowing offline editing with encrypted persistence
 
 When your app’s domain models are small and self-contained (and relationships are implicit rather than relational) you don’t need a database schema.
 
-OfflineData is purpose-built for this style:
+Cabinet is purpose-built for this style:
 
 * Save aggregates (e.g. a `LessonRecord` or `InspectionLog`)
 * Retrieve and filter using the encrypted index
@@ -78,7 +78,7 @@ It’s effectively an encrypted, persistent, domain object store.
 
 ## 6. Embedded Plugins or Framework Extensions
 
-If you’re building SDKs or plugins (for example, white-label apps or enterprise extensions), OfflineData is ideal:
+If you’re building SDKs or plugins (for example, white-label apps or enterprise extensions), Cabinet is ideal:
 
 * 100% managed code
 * AOT-safe and dependency-free
@@ -89,7 +89,7 @@ It fits anywhere you’d otherwise use `SecureStorage` plus JSON files, but with
 
 ## When Not to Use It
 
-OfflineData is not a relational database and doesn’t aim to be.
+Cabinet is not a relational database and doesn’t aim to be.
 
 Avoid it if you need:
 

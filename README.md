@@ -23,7 +23,7 @@ encryption, indexing, fast lookups, and predictable performance — all in pure 
 
 ## What it is
 
-OfflineData borrows the document-style persistence approach of NoSQL systems, but applies it in a lightweight, encrypted, AOT-friendly way tailored for mobile apps.
+Cabinet borrows the document-style persistence approach of NoSQL systems, but applies it in a lightweight, encrypted, AOT-friendly way tailored for mobile apps.
 
 | **Concept**                    | **Description**                                                                                           |
 | ------------------------------ | --------------------------------------------------------------------------------------------------------- |

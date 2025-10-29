@@ -224,7 +224,7 @@ No optimisation needed. Use any storage pattern.
 
 ### Medium Datasets (1,000 - 10,000 records)
 
-This is the sweet spot for OfflineData:
+This is the sweet spot for Cabinet:
 - Aggregate files keep file count low
 - Index fits comfortably in memory
 - Search remains sub-millisecond
@@ -251,11 +251,11 @@ Still performant, but requires more care:
 
 At this scale, consider alternative architectures:
 - Use SQLite or similar for analytics
-- Keep OfflineData for hot/recent data
+- Keep Cabinet for hot/recent data
 - Shard by time or category
 - Implement custom indexing (e.g., Lucene.NET)
 
-OfflineData is designed for typical mobile app workloads, not big data.
+Cabinet is designed for typical mobile app workloads, not big data.
 
 ## Optimisation Techniques
 
@@ -346,7 +346,7 @@ The result: predictable, consistent performance across Android, iOS, Windows, an
 
 ## Benchmarking Your Workload
 
-To understand how OfflineData performs for your specific use case:
+To understand how Cabinet performs for your specific use case:
 
 ```bash
 dotnet run -c Release --project tests/Cabinet.Benchmarks
@@ -362,7 +362,7 @@ Every app's workload is different. The principles in this document help you make
 
 ## Summary
 
-OfflineData is fast because:
+Cabinet is fast because:
 1. It minimises file I/O through aggregate storage
 2. It uses in-memory indexing for sub-millisecond search
 3. It treats encryption as a negligible overhead

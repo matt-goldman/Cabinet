@@ -1,6 +1,6 @@
 # Performance
 
-OfflineData is designed for predictable performance, even under encryption.
+Cabinet is designed for predictable performance, even under encryption.
 All benchmarks were run on physical devices (iOS, Android, macOS and Windows) using .NET 9 in Release mode.
 
 ## Summary
@@ -77,7 +77,7 @@ Cabinet prioritises atomic encryption and zero plaintext writes, so throughput r
 
 When used optimally (storing aggregate files rather than one file per record) performance improves by two to three orders of magnitude. For example, writing 5,000 records in 19 aggregate files takes 30 ms, versus 10,000 ms for 5,000 individual files.
 
-This design choice alone transforms OfflineData from “secure and fast enough" into “secure and _fast._”
+This design choice alone transforms Cabinet from “secure and fast enough" into “secure and _fast._”
 
 ## How to Benchmark Yourself
 
@@ -101,7 +101,7 @@ You can adjust:
 
 ## Conclusion
 
-OfflineData trades a small amount of write throughput for strong guarantees:
+Cabinet trades a small amount of write throughput for strong guarantees:
 
 * Deterministic encryption and integrity.
 * Near-instant full-text search.
