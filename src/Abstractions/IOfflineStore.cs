@@ -33,36 +33,41 @@ public interface IOfflineStore
     /// <param name="id">The unique identifier for this record</param>
     /// <param name="data">The data to save</param>
     /// <param name="attachments">Optional file attachments to store with the record</param>
+    /// <param name="cancellationToken">Optional token to cancel the operation</param>
     /// <returns>A task representing the asynchronous save operation</returns>
-    Task SaveAsync<T>(string id, T data, IEnumerable<FileAttachment>? attachments = null);
+    Task SaveAsync<T>(string id, T data, IEnumerable<FileAttachment>? attachments = null, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Loads data with the specified identifier from encrypted storage.
     /// </summary>
     /// <typeparam name="T">The type of data to load</typeparam>
     /// <param name="id">The unique identifier of the record to load</param>
+    /// <param name="cancellationToken">Optional token to cancel the operation</param>
     /// <returns>The loaded data, or null if the record does not exist</returns>
-    Task<T?> LoadAsync<T>(string id);
+    Task<T?> LoadAsync<T>(string id, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Deletes the record and all associated attachments with the specified identifier.
     /// </summary>
     /// <param name="id">The unique identifier of the record to delete</param>
+    /// <param name="cancellationToken">Optional token to cancel the operation</param>
     /// <returns>A task representing the asynchronous delete operation</returns>
-    Task DeleteAsync(string id);
+    Task DeleteAsync(string id, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Searches for records matching the specified query string.
     /// </summary>
     /// <param name="query">The search query to match against indexed content</param>
+    /// <param name="cancellationToken">Optional token to cancel the operation</param>
     /// <returns>An enumerable collection of search results with metadata</returns>
-    Task<IEnumerable<SearchResult>> FindAsync(string query);
+    Task<IEnumerable<SearchResult>> FindAsync(string query, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Searches for records matching the specified query string and returns typed results with data.
     /// </summary>
     /// <typeparam name="T">The type of data in the records</typeparam>
     /// <param name="query">The search query to match against indexed content</param>
+    /// <param name="cancellationToken">Optional token to cancel the operation</param>
     /// <returns>An enumerable collection of typed search results with data</returns>
-    Task<IEnumerable<SearchResult<T>>> FindAsync<T>(string query);
+    Task<IEnumerable<SearchResult<T>>> FindAsync<T>(string query, CancellationToken cancellationToken = default);
 }

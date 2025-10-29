@@ -39,12 +39,13 @@ public class PersistentIndexProvider : IIndexProvider
 	/// <summary>
 	/// Ensures the index is loaded from disk on first access.
 	/// </summary>
+	/// <param name="cancellationToken">Optional token to cancel the operation</param>
 	/// <returns>A task representing the asynchronous initialisation operation</returns>
-	private async Task EnsureInitializedAsync()
+	private async Task EnsureInitializedAsync(CancellationToken cancellationToken = default)
 	{
 		if (_isInitialized) return;
 
-		await _lock.WaitAsync();
+		await _lock.WaitAsync(cancellationToken);
 		try
 		{
 			if (_isInitialized) return;
@@ -54,8 +55,8 @@ public class PersistentIndexProvider : IIndexProvider
 			{
 				try
 				{
-					var encryptedData = await File.ReadAllBytesAsync(_indexFilePath);
-					var decryptedData = await _encryptionProvider.DecryptAsync(encryptedData, "search-index");
+					var encryptedData = await File.ReadAllBytesAsync(_indexFilePath, cancellationToken);
+					var decryptedData = await _encryptionProvider.DecryptAsync(encryptedData, "search-index", cancellationToken);
 					var json = System.Text.Encoding.UTF8.GetString(decryptedData);
 					var entries = JsonSerializer.Deserialize<List<IndexEntry>>(json);
 					
@@ -85,11 +86,11 @@ public class PersistentIndexProvider : IIndexProvider
 	/// <remarks>
 	/// The content is normalised to lowercase and persisted to encrypted storage.
 	/// </remarks>
-	public async Task IndexAsync(string id, string content, IDictionary<string, string> metadata)
+	public async Task IndexAsync(string id, string content, IDictionary<string, string> metadata, CancellationToken cancellationToken = default)
 	{
-		await EnsureInitializedAsync();
+		await EnsureInitializedAsync(cancellationToken);
 
-		await _lock.WaitAsync();
+		await _lock.WaitAsync(cancellationToken);
 		try
 		{
 			var entry = new IndexEntry(id, content.ToLowerInvariant(), metadata, DateTimeOffset.UtcNow);
@@ -97,7 +98,7 @@ public class PersistentIndexProvider : IIndexProvider
 			_isDirty = true;
 
 			// Save to disk periodically (every index operation to ensure persistence)
-			await SaveIndexAsync();
+			await SaveIndexAsync(cancellationToken);
 		}
 		finally
 		{
@@ -109,11 +110,11 @@ public class PersistentIndexProvider : IIndexProvider
 	/// <remarks>
 	/// Performs tokenisation, term frequency analysis, and relevance scoring.
 	/// </remarks>
-	public async Task<IEnumerable<SearchResult>> QueryAsync(string query)
+	public async Task<IEnumerable<SearchResult>> QueryAsync(string query, CancellationToken cancellationToken = default)
 	{
-		await EnsureInitializedAsync();
+		await EnsureInitializedAsync(cancellationToken);
 
-		await _lock.WaitAsync();
+		await _lock.WaitAsync(cancellationToken);
 		try
 		{
 			var lowerQuery = query.ToLowerInvariant();
@@ -200,8 +201,9 @@ public class PersistentIndexProvider : IIndexProvider
 	/// Persists the in-memory index to encrypted storage on disk.
 	/// Uses atomic write operations to prevent data corruption.
 	/// </summary>
+	/// <param name="cancellationToken">Optional token to cancel the operation</param>
 	/// <returns>A task representing the asynchronous save operation</returns>
-	private async Task SaveIndexAsync()
+	private async Task SaveIndexAsync(CancellationToken cancellationToken = default)
 	{
 		if (!_isDirty) return;
 
@@ -214,10 +216,10 @@ public class PersistentIndexProvider : IIndexProvider
 			});
 			
 			var plaintext = System.Text.Encoding.UTF8.GetBytes(json);
-			var encrypted = await _encryptionProvider.EncryptAsync(plaintext, "search-index");
+			var encrypted = await _encryptionProvider.EncryptAsync(plaintext, "search-index", cancellationToken);
 			
 			var tempPath = _indexFilePath + ".tmp";
-			await File.WriteAllBytesAsync(tempPath, encrypted);
+			await File.WriteAllBytesAsync(tempPath, encrypted, cancellationToken);
 			File.Move(tempPath, _indexFilePath, true);
 			
 			_isDirty = false;
@@ -230,14 +232,14 @@ public class PersistentIndexProvider : IIndexProvider
 	}
 
 	/// <inheritdoc/>
-	public async Task ClearAsync()
+	public async Task ClearAsync(CancellationToken cancellationToken = default)
 	{
-		await _lock.WaitAsync();
+		await _lock.WaitAsync(cancellationToken);
 		try
 		{
 			_index.Clear();
 			_isDirty = true;
-			await SaveIndexAsync();
+			await SaveIndexAsync(cancellationToken);
 			
 			if (File.Exists(_indexFilePath))
 			{

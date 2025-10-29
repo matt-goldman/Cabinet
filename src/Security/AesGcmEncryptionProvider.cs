@@ -21,8 +21,10 @@ public sealed class AesGcmEncryptionProvider(byte[] masterKey) : IEncryptionProv
     /// Uses AES-256-GCM authenticated encryption. The context is used as additional authenticated data (AAD).
     /// Returns a byte array containing [nonce(12) | ciphertext(variable) | tag(16)].
     /// </remarks>
-    public Task<byte[]> EncryptAsync(ReadOnlyMemory<byte> plaintext, string context)
+    public Task<byte[]> EncryptAsync(ReadOnlyMemory<byte> plaintext, string context, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         var nonce = RandomNumberGenerator.GetBytes(12);
         var aad = Encoding.UTF8.GetBytes(context);
         var cipher = new byte[plaintext.Length];
@@ -44,8 +46,10 @@ public sealed class AesGcmEncryptionProvider(byte[] masterKey) : IEncryptionProv
     /// Uses AES-256-GCM to decrypt and verify authenticity. The context must match the value used during encryption.
     /// Expects input in format [nonce(12) | ciphertext(variable) | tag(16)].
     /// </remarks>
-    public Task<byte[]> DecryptAsync(ReadOnlyMemory<byte> ciphertext, string context)
+    public Task<byte[]> DecryptAsync(ReadOnlyMemory<byte> ciphertext, string context, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         var aad = Encoding.UTF8.GetBytes(context);
         var nonce = ciphertext[..12].ToArray();
         var tag = ciphertext.Slice(ciphertext.Length - 16, 16).ToArray();

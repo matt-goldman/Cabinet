@@ -212,13 +212,13 @@ public class OfflineStoreExtensionsTests : IDisposable
 	{
 		private readonly Dictionary<string, string> _index = new();
 
-		public Task IndexAsync(string id, string content, IDictionary<string, string> metadata)
+		public Task IndexAsync(string id, string content, IDictionary<string, string> metadata, CancellationToken cancellationToken = default)
 		{
 			_index[id] = content.ToLowerInvariant();
 			return Task.CompletedTask;
 		}
 
-		public Task<IEnumerable<SearchResult>> QueryAsync(string query)
+		public Task<IEnumerable<SearchResult>> QueryAsync(string query, CancellationToken cancellationToken = default)
 		{
 			var lowerQuery = query.ToLowerInvariant();
 			var results = new List<SearchResult>();
@@ -236,7 +236,7 @@ public class OfflineStoreExtensionsTests : IDisposable
 			return Task.FromResult<IEnumerable<SearchResult>>(results);
 		}
 
-		public Task ClearAsync()
+		public Task ClearAsync(CancellationToken cancellationToken = default)
 		{
 			_index.Clear();
 			return Task.CompletedTask;
