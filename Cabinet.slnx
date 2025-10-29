@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/Cabinet.csproj" />
+    <Project Path="src/Cabinet.SourceGenerators/Cabinet.SourceGenerators.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Cabinet.Tests/Cabinet.Tests.csproj" />

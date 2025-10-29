@@ -18,7 +18,14 @@
 	<PackageIcon>icon.png</PackageIcon>
 	<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 	<Copyright>Matt Goldman 2025</Copyright>
+	<EnableDefaultCompileItems>true</EnableDefaultCompileItems>
   </PropertyGroup>
+
+    <ItemGroup>
+	    <Compile Remove="Cabinet.SourceGenerators\**" />
+	    <EmbeddedResource Remove="Cabinet.SourceGenerators\**" />
+	    <None Remove="Cabinet.SourceGenerators\**" />
+    </ItemGroup>
 
     <ItemGroup>
 	    <None Include="..\assets\icon.png" Pack="true" PackagePath="" />
@@ -33,6 +40,14 @@
 		    <Pack>True</Pack>
 		    <PackagePath>\</PackagePath>
 	    </None>
+    </ItemGroup>
+
+    <ItemGroup>
+	    <ProjectReference Include="Cabinet.SourceGenerators\Cabinet.SourceGenerators.csproj" ReferenceOutputAssembly="false" PrivateAssets="contentfiles;build" />
+    </ItemGroup>
+
+    <ItemGroup>
+	    <None Include="Cabinet.SourceGenerators\bin\$(Configuration)\netstandard2.0\Cabinet.SourceGenerators.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
     </ItemGroup>
 
 </Project>
