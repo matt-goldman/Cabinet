@@ -2,7 +2,7 @@
 
 ![icon](/assets/icon-256.png)
 
-A secure, indexed offline datastore for .NET MAUI.
+A secure, indexed offline datastore for .NET.
 It’s the simplest way to persist structured data locally - encrypted, searchable, and AOT-safe - without the complexity of a traditional database.
 
 ## Why
@@ -44,7 +44,7 @@ If you think you need a mobile database, you might actually need this.
 | A cloud sync engine   | Data lives locally; sync is up to you.                                     |
 | A toy                 | It’s built for production use: encrypted, indexed, and tested under load. |
 
-If you’ve ever used IndexedDB in the browser, you can think of this as IndexedDB for MAUI, but simpler, safer, and designed for .NET idioms.
+If you’ve ever used IndexedDB in the browser, you can think of this as IndexedDB for standalone .NET projects, but simpler, safer, and designed for .NET idioms.
 
 ## Features
 

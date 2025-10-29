@@ -169,7 +169,7 @@ This makes it suitable for mobile devices with limited RAM.
 | Write throughput       | Moderate                      | Slower (per-file writes)*                |
 | Read throughput        | Fast                          | Fast                                     |
 | Search performance     | Good (LINQ-based)             | Sub-millisecond (inverted index)         |
-| Encryption             | Built-in                      | Built-in, zero config                    |
+| Encryption             | Optional                      | Built-in, required                       |
 | Native dependencies    | No                            | No                                       |
 | AOT compatibility      | No (uses dynamic expressions) | Yes                                      |
 | Best for               | Document-style queries        | Domain models, encrypted offline storage |

@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Cabinet is a lightweight, encrypted offline data layer for .NET MAUI applications. It provides structured file storage with encryption at rest, full-text search capabilities, and cross-platform reliability without requiring native database dependencies like SQLite or Realm.
+Cabinet is a lightweight, encrypted offline data layer for .NET applications, primarily .NET MAUI but useful for other .NET platforms as well. It provides structured file storage with encryption at rest, full-text search capabilities, and cross-platform reliability without requiring native database dependencies like SQLite or Realm.
 
 **Key characteristics:**
 - Pure .NET implementation
