@@ -149,7 +149,7 @@ public class PersistentIndexProvider : IIndexProvider
 		return query.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
 			.Where(t => t.Length > 2) // Ignore very short terms
 			.Distinct()
-            .ToList();
+			.ToList();
 	}
 
 	/// <summary>
