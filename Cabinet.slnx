@@ -5,6 +5,7 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Cabinet.Tests/Cabinet.Tests.csproj" />
+    <Project Path="tests/Cabinet.SourceGenerators.Tests/Cabinet.SourceGenerators.Tests.csproj" />
   </Folder>
   <Project Path="demo/demo.csproj" />
 </Solution>
