@@ -103,7 +103,8 @@ public static class CompetitiveBenchmarks
 		Directory.CreateDirectory(testPath);
 
 		var result = new CompetitiveBenchmarkResult { RecordCount = recordCount };
-		var sw = Stopwatch.StartNew();
+		var totalSw = Stopwatch.StartNew();
+		var sw = new Stopwatch();
 
 		try
 		{
@@ -130,7 +131,7 @@ public static class CompetitiveBenchmarks
 			sw.Restart();
 			for (int i = 0; i < 10; i++)
 			{
-				var record = await store.LoadAsync<TestRecord>($"record-{recordCount / 2}");
+				_ = await store.LoadAsync<TestRecord>($"record-{recordCount / 2}");
 			}
 			result.CabinetReadTime = sw.Elapsed.TotalMilliseconds / 10.0;
 
@@ -281,7 +282,7 @@ public static class CompetitiveBenchmarks
 			{
 				using var db = new LiteDatabase(liteDbPath);
 				var col = db.GetCollection<TestRecord>("records");
-				var record = col.FindById($"record-{recordCount / 2}");
+				_ = col.FindById($"record-{recordCount / 2}");
 			}
 			result.LiteDbReadTime = sw.Elapsed.TotalMilliseconds / 10.0;
 
@@ -305,7 +306,7 @@ public static class CompetitiveBenchmarks
 			}
 			result.LiteDbColdStartTime = sw.Elapsed.TotalMilliseconds;
 
-			result.TotalTime = sw.Elapsed.TotalSeconds;
+			result.TotalTime = totalSw.Elapsed.TotalSeconds;
 			return result;
 		}
 		finally
