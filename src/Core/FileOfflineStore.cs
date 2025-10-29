@@ -35,16 +35,16 @@ public sealed class FileOfflineStore : IOfflineStore
     /// The data is serialised to JSON, encrypted, and written atomically to disk.
     /// If an index provider is configured, the content is automatically indexed.
     /// </remarks>
-    public async Task SaveAsync<T>(string id, T data, IEnumerable<FileAttachment>? attachments = null)
+    public async Task SaveAsync<T>(string id, T data, IEnumerable<FileAttachment>? attachments = null, CancellationToken cancellationToken = default)
     {
         var json = JsonSerializer.SerializeToUtf8Bytes(data, _jsonOptions);
-        var enc = await _crypto.EncryptAsync(json, id);
+        var enc = await _crypto.EncryptAsync(json, id, cancellationToken);
         var path = Path.Combine(_root, "records", $"{id}.dat.tmp");
-        await File.WriteAllBytesAsync(path, enc);
+        await File.WriteAllBytesAsync(path, enc, cancellationToken);
         File.Move(path, path.Replace(".dat.tmp", ".dat"), true);
 
         if (_indexer != null)
-            await _indexer.IndexAsync(id, JsonSerializer.Serialize(data, _jsonOptions), new Dictionary<string, string>());
+            await _indexer.IndexAsync(id, JsonSerializer.Serialize(data, _jsonOptions), new Dictionary<string, string>(), cancellationToken);
 
         if (attachments != null)
         {
@@ -52,9 +52,9 @@ public sealed class FileOfflineStore : IOfflineStore
             {
                 var attPath = Path.Combine(_root, "attachments", $"{id}-{att.LogicalName}.bin.tmp");
                 using var mem = new MemoryStream();
-                await att.Content.CopyToAsync(mem);
-                var encBytes = await _crypto.EncryptAsync(mem.ToArray(), id);
-                await File.WriteAllBytesAsync(attPath, encBytes);
+                await att.Content.CopyToAsync(mem, cancellationToken);
+                var encBytes = await _crypto.EncryptAsync(mem.ToArray(), id, cancellationToken);
+                await File.WriteAllBytesAsync(attPath, encBytes, cancellationToken);
                 File.Move(attPath, attPath.Replace(".bin.tmp", ".bin"), true);
             }
         }
@@ -64,19 +64,21 @@ public sealed class FileOfflineStore : IOfflineStore
     /// <remarks>
     /// The encrypted file is read, decrypted, and deserialised from JSON.
     /// </remarks>
-    public async Task<T?> LoadAsync<T>(string id)
+    public async Task<T?> LoadAsync<T>(string id, CancellationToken cancellationToken = default)
     {
         var path = Path.Combine(_root, "records", $"{id}.dat");
         if (!File.Exists(path)) return default;
 
-        var enc = await File.ReadAllBytesAsync(path);
-        var dec = await _crypto.DecryptAsync(enc, id);
+        var enc = await File.ReadAllBytesAsync(path, cancellationToken);
+        var dec = await _crypto.DecryptAsync(enc, id, cancellationToken);
         return JsonSerializer.Deserialize<T>(dec.AsSpan(), _jsonOptions);
     }
 
     /// <inheritdoc/>
-    public Task DeleteAsync(string id)
+    public Task DeleteAsync(string id, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         var record = Path.Combine(_root, "records", $"{id}.dat");
         if (File.Exists(record)) File.Delete(record);
 
@@ -90,9 +92,9 @@ public sealed class FileOfflineStore : IOfflineStore
     /// <remarks>
     /// Requires an index provider to be configured.
     /// </remarks>
-    public async Task<IEnumerable<SearchResult>> FindAsync(string query)
+    public async Task<IEnumerable<SearchResult>> FindAsync(string query, CancellationToken cancellationToken = default)
         => _indexer != null
-            ? await _indexer.QueryAsync(query)
+            ? await _indexer.QueryAsync(query, cancellationToken)
             : [];
 
     /// <inheritdoc/>
@@ -100,15 +102,15 @@ public sealed class FileOfflineStore : IOfflineStore
     /// Attempts to load records as type T or as List&lt;T&gt; (for aggregate file patterns).
     /// Requires an index provider to be configured.
     /// </remarks>
-    public async Task<IEnumerable<SearchResult<T>>> FindAsync<T>(string query)
+    public async Task<IEnumerable<SearchResult<T>>> FindAsync<T>(string query, CancellationToken cancellationToken = default)
     {
         if (_indexer == null)
             return [];
 
-        var results = await _indexer.QueryAsync(query);
+        var results = await _indexer.QueryAsync(query, cancellationToken);
         
         // Create tasks from the pure function
-        var loadTasks = results.Select(LoadSearchResultAsync<T>).ToArray();
+        var loadTasks = results.Select(r => LoadSearchResultAsync<T>(r, cancellationToken)).ToArray();
 
         var allResults = await Task.WhenAll(loadTasks).ConfigureAwait(false);
         var typedResults = new List<SearchResult<T>>();
@@ -119,14 +121,14 @@ public sealed class FileOfflineStore : IOfflineStore
         return typedResults;
     }
 
-    private async Task<List<SearchResult<T>>> LoadSearchResultAsync<T>(SearchResult result)
+    private async Task<List<SearchResult<T>>> LoadSearchResultAsync<T>(SearchResult result, CancellationToken cancellationToken = default)
     {
         var typedResults = new List<SearchResult<T>>();
         
         // Try to load as T first
         try
         {
-            var data = await LoadAsync<T>(result.RecordId).ConfigureAwait(false);
+            var data = await LoadAsync<T>(result.RecordId, cancellationToken).ConfigureAwait(false);
             if (data != null)
             {
                 typedResults.Add(new SearchResult<T>(
@@ -145,7 +147,7 @@ public sealed class FileOfflineStore : IOfflineStore
         // Try to load as IList<T> (for aggregate file pattern)
         try
         {
-            var listData = await LoadAsync<List<T>>(result.RecordId).ConfigureAwait(false);
+            var listData = await LoadAsync<List<T>>(result.RecordId, cancellationToken).ConfigureAwait(false);
             if (listData != null && listData.Count > 0)
             {
                 // Add each item in the list as a separate result

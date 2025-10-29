@@ -31,17 +31,44 @@ public static class OfflineStoreExtensions
 		this IOfflineStore store,
 		params string[] terms)
 	{
+		return await FindManyAsync<T>(store, CancellationToken.None, terms);
+	}
+
+	/// <summary>
+	/// Finds records matching the specified search terms and returns their data as a queryable record query.
+	/// This is a convenience method that combines FindAsync with data extraction.
+	/// When multiple terms are provided, performs an OR search (records matching any term).
+	/// </summary>
+	/// <typeparam name="T">The type of records to find</typeparam>
+	/// <param name="store">The offline store to query</param>
+	/// <param name="cancellationToken">Optional token to cancel the operation</param>
+	/// <param name="terms">Search terms to match (OR operation)</param>
+	/// <returns>A queryable record query of matching records</returns>
+	/// <example>
+	/// <code>
+	/// var lessons = await store
+	///     .FindManyAsync&lt;LessonRecord&gt;(cancellationToken, "maths", "Dylan", "Jessica")
+	///     .Where(l => l.Subject == "Maths")
+	///     .OrderBy(l => l.Date)
+	///     .ToList();
+	/// </code>
+	/// </example>
+	public static async Task<RecordQuery<T>> FindManyAsync<T>(
+		this IOfflineStore store,
+		CancellationToken cancellationToken,
+		params string[] terms)
+	{
 		if (terms.Length == 0)
 			return new RecordQuery<T>([]);
 
 		if (terms.Length == 1)
 		{
-			var results = await store.FindAsync<T>(terms[0]);
+			var results = await store.FindAsync<T>(terms[0], cancellationToken);
 			return new RecordQuery<T>(results.Select(r => r.Data));
 		}
 
 		// For multiple terms, perform parallel queries and combine results
-		var tasks = terms.Select(term => store.FindAsync<T>(term));
+		var tasks = terms.Select(term => store.FindAsync<T>(term, cancellationToken));
 		var resultsArray = await Task.WhenAll(tasks);
 		
 		var allResults = new Dictionary<string, T>(); // Use dictionary to deduplicate by ID
@@ -124,7 +151,37 @@ public static class OfflineStoreExtensions
 		Func<T, bool> predicate,
 		params string[] terms)
 	{
-		var results = await store.FindManyAsync<T>(terms);
+		return await FindWhereAsync<T>(store, predicate, CancellationToken.None, terms);
+	}
+
+	/// <summary>
+	/// Finds records matching search terms and immediately applies a predicate filter.
+	/// This combines index lookup with in-memory filtering in a single operation.
+	/// </summary>
+	/// <typeparam name="T">The type of records to find</typeparam>
+	/// <param name="store">The offline store to query</param>
+	/// <param name="predicate">The filter predicate to apply</param>
+	/// <param name="cancellationToken">Optional token to cancel the operation</param>
+	/// <param name="terms">Search terms to match (OR operation)</param>
+	/// <returns>A queryable record query of matching, filtered records</returns>
+	/// <example>
+	/// <code>
+	/// var mathsLessons = await store
+	///     .FindWhereAsync&lt;LessonRecord&gt;(
+	///         l => l.Subject == "Maths" &amp;&amp; l.Children.Contains("Dylan"),
+	///         cancellationToken,
+	///         "seagulls", "volcano", "experiment")
+	///     .OrderBy(l => l.Date)
+	///     .ToList();
+	/// </code>
+	/// </example>
+	public static async Task<RecordQuery<T>> FindWhereAsync<T>(
+		this IOfflineStore store,
+		Func<T, bool> predicate,
+		CancellationToken cancellationToken,
+		params string[] terms)
+	{
+		var results = await store.FindManyAsync<T>(cancellationToken, terms);
 		return results.Where(predicate);
 	}
 }

@@ -74,9 +74,10 @@ public sealed class RecordSet<T> where T : class
 	/// Loads all records of this type into memory cache.
 	/// This is typically called once at startup or when you need to refresh from disk.
 	/// </summary>
-	public async Task LoadAsync()
+	/// <param name="cancellationToken">Optional token to cancel the operation</param>
+	public async Task LoadAsync(CancellationToken cancellationToken = default)
 	{
-		var records = await _store.LoadAsync<List<T>>(_fileName);
+		var records = await _store.LoadAsync<List<T>>(_fileName, cancellationToken);
 
 		if (records == null)
 		{
@@ -96,10 +97,11 @@ public sealed class RecordSet<T> where T : class
 	/// <summary>
 	/// Gets all records in the record set. Loads from disk if not already loaded.
 	/// </summary>
+	/// <param name="cancellationToken">Optional token to cancel the operation</param>
 	/// <returns>All records of type T</returns>
-	public async Task<IEnumerable<T>> GetAllAsync()
+	public async Task<IEnumerable<T>> GetAllAsync(CancellationToken cancellationToken = default)
 	{
-		await EnsureLoadedAsync();
+		await EnsureLoadedAsync(cancellationToken);
 		return _cache?.Values.ToList() ?? [];
 	}
 
@@ -107,10 +109,11 @@ public sealed class RecordSet<T> where T : class
 	/// Gets a record by its ID. Loads from disk if not already loaded.
 	/// </summary>
 	/// <param name="id">The ID of the record to retrieve</param>
+	/// <param name="cancellationToken">Optional token to cancel the operation</param>
 	/// <returns>The record if found, null otherwise</returns>
-	public async Task<T?> GetByIdAsync(string id)
+	public async Task<T?> GetByIdAsync(string id, CancellationToken cancellationToken = default)
 	{
-		await EnsureLoadedAsync();
+		await EnsureLoadedAsync(cancellationToken);
 		return _cache?.GetValueOrDefault(id);
 	}
 
@@ -118,11 +121,12 @@ public sealed class RecordSet<T> where T : class
 	/// Adds a new record to the record set. Automatically persists to disk.
 	/// </summary>
 	/// <param name="record">The record to add</param>
-	public async Task AddAsync(T record)
+	/// <param name="cancellationToken">Optional token to cancel the operation</param>
+	public async Task AddAsync(T record, CancellationToken cancellationToken = default)
 	{
 		ArgumentNullException.ThrowIfNull(record);
 
-		await EnsureLoadedAsync();
+		await EnsureLoadedAsync(cancellationToken);
 
 		var id = GetId(record);
 
@@ -133,7 +137,7 @@ public sealed class RecordSet<T> where T : class
 		}
 
 		// Persist to disk
-		await SaveAllAsync();
+		await SaveAllAsync(cancellationToken);
 	}
 
 	/// <summary>
@@ -141,12 +145,13 @@ public sealed class RecordSet<T> where T : class
 	/// </summary>
 	/// <param name="id">The ID of the record to update</param>
 	/// <param name="record">The updated record</param>
+	/// <param name="cancellationToken">Optional token to cancel the operation</param>
 	/// <returns>True if the record was found and updated, false otherwise</returns>
-	public async Task<bool> UpdateAsync(string id, T record)
+	public async Task<bool> UpdateAsync(string id, T record, CancellationToken cancellationToken = default)
 	{
 		ArgumentNullException.ThrowIfNull(record);
 
-		await EnsureLoadedAsync();
+		await EnsureLoadedAsync(cancellationToken);
 
 		if (_cache == null || !_cache.ContainsKey(id))
 		{
@@ -154,7 +159,7 @@ public sealed class RecordSet<T> where T : class
 		}
 
 		_cache[id] = record;
-		await SaveAllAsync();
+		await SaveAllAsync(cancellationToken);
 		return true;
 	}
 
@@ -162,17 +167,18 @@ public sealed class RecordSet<T> where T : class
 	/// Removes a record by its ID. Automatically persists to disk.
 	/// </summary>
 	/// <param name="id">The ID of the record to remove</param>
+	/// <param name="cancellationToken">Optional token to cancel the operation</param>
 	/// <returns>True if the record was found and removed, false otherwise</returns>
-	public async Task<bool> RemoveAsync(string id)
+	public async Task<bool> RemoveAsync(string id, CancellationToken cancellationToken = default)
 	{
-		await EnsureLoadedAsync();
+		await EnsureLoadedAsync(cancellationToken);
 
 		if (_cache == null || !_cache.Remove(id))
 		{
 			return false;
 		}
 
-		await SaveAllAsync();
+		await SaveAllAsync(cancellationToken);
 		return true;
 	}
 
@@ -183,13 +189,24 @@ public sealed class RecordSet<T> where T : class
 	/// <returns>Records matching the search terms</returns>
 	public async Task<IEnumerable<T>> FindAsync(params string[] terms)
 	{
+		return await FindAsync(CancellationToken.None, terms);
+	}
+
+	/// <summary>
+	/// Searches records using the encrypted index.
+	/// </summary>
+	/// <param name="cancellationToken">Optional token to cancel the operation</param>
+	/// <param name="terms">Search terms to match</param>
+	/// <returns>Records matching the search terms</returns>
+	public async Task<IEnumerable<T>> FindAsync(CancellationToken cancellationToken, params string[] terms)
+	{
 		if (terms.Length == 0)
 		{
-			return await GetAllAsync();
+			return await GetAllAsync(cancellationToken);
 		}
 
 		var query = string.Join(" ", terms);
-		var results = await _store.FindAsync<T>(query);
+		var results = await _store.FindAsync<T>(query, cancellationToken);
 
 		// Filter to only records from this type's file
 		return results
@@ -235,11 +252,12 @@ public sealed class RecordSet<T> where T : class
 	/// <summary>
 	/// Reloads all records from disk, discarding the cache.
 	/// </summary>
-	public async Task RefreshAsync()
+	/// <param name="cancellationToken">Optional token to cancel the operation</param>
+	public async Task RefreshAsync(CancellationToken cancellationToken = default)
 	{
 		_isLoaded = false;
 		_cache = null;
-		await LoadAsync();
+		await LoadAsync(cancellationToken);
 	}
 
 	/// <summary>
@@ -252,11 +270,11 @@ public sealed class RecordSet<T> where T : class
 		return _cache?.Count ?? 0;
 	}
 
-	private async Task EnsureLoadedAsync()
+	private async Task EnsureLoadedAsync(CancellationToken cancellationToken = default)
 	{
 		if (!_isLoaded)
 		{
-			await LoadAsync();
+			await LoadAsync(cancellationToken);
 		}
 	}
 
@@ -269,7 +287,7 @@ public sealed class RecordSet<T> where T : class
 		}
 	}
 
-	private async Task SaveAllAsync()
+	private async Task SaveAllAsync(CancellationToken cancellationToken = default)
 	{
 		if (_cache == null)
 		{
@@ -277,7 +295,7 @@ public sealed class RecordSet<T> where T : class
 		}
 
 		var records = _cache.Values.ToList();
-		await _store.SaveAsync(_fileName, records);
+		await _store.SaveAsync(_fileName, records, cancellationToken: cancellationToken);
 	}
 
 	private string GetId(T record)
