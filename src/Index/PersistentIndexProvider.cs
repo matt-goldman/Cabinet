@@ -208,9 +208,9 @@ public class PersistentIndexProvider : IIndexProvider
 		try
 		{
 			var entries = _index.Values.ToList();
-            var json = JsonSerializer.Serialize(entries, new JsonSerializerOptions
-            {
-                WriteIndented = false 
+			var json = JsonSerializer.Serialize(entries, new JsonSerializerOptions
+			{
+				WriteIndented = false 
 			});
 			
 			var plaintext = System.Text.Encoding.UTF8.GetBytes(json);
