@@ -71,9 +71,9 @@ public class AotRecordGenerator : IIncrementalGenerator
 	private static IPropertySymbol? FindIdProperty(INamedTypeSymbol classSymbol, string? explicitName)
 	{
 		// If explicit name is specified, use it
-		if (!string.IsNullOrEmpty(explicitName))
+		if (explicitName is not null && explicitName.Length > 0)
 		{
-			return classSymbol.GetMembers(explicitName!)
+			return classSymbol.GetMembers(explicitName)
 				.OfType<IPropertySymbol>()
 				.FirstOrDefault();
 		}
