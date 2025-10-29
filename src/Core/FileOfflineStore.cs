@@ -30,6 +30,25 @@ public sealed class FileOfflineStore : IOfflineStore
         Directory.CreateDirectory(Path.Combine(_root, "index"));
     }
 
+    /// <summary>
+    /// Initialises a new instance of the <see cref="FileOfflineStore"/> class with custom JSON serialisation options.
+    /// This constructor is designed for AOT scenarios where JSON source generation is required.
+    /// </summary>
+    /// <param name="rootPath">The root directory path where records and attachments will be stored</param>
+    /// <param name="crypto">The encryption provider to use for encrypting and decrypting data</param>
+    /// <param name="jsonOptions">Custom JSON serialiser options for AOT-compatible serialisation</param>
+    /// <param name="indexer">Optional index provider for enabling search capabilities</param>
+    public FileOfflineStore(string rootPath, IEncryptionProvider crypto, JsonSerializerOptions jsonOptions, IIndexProvider? indexer = null)
+    {
+        _root = rootPath;
+        _crypto = crypto;
+        _jsonOptions = jsonOptions;
+        _indexer = indexer;
+        Directory.CreateDirectory(Path.Combine(_root, "records"));
+        Directory.CreateDirectory(Path.Combine(_root, "attachments"));
+        Directory.CreateDirectory(Path.Combine(_root, "index"));
+    }
+
     /// <inheritdoc/>
     /// <remarks>
     /// The data is serialised to JSON, encrypted, and written atomically to disk.

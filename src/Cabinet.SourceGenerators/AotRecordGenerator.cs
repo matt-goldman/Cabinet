@@ -194,6 +194,7 @@ public class AotRecordGenerator : IIncrementalGenerator
 		sb.AppendLine("using System.Text.Json;");
 		sb.AppendLine("using Cabinet;");
 		sb.AppendLine("using Cabinet.Core;");
+		sb.AppendLine("using Cabinet.Index;");
 		sb.AppendLine("using Cabinet.Security;");
 		sb.AppendLine();
 		sb.AppendLine("namespace Cabinet.Generated;");
@@ -205,13 +206,16 @@ public class AotRecordGenerator : IIncrementalGenerator
 		sb.AppendLine("\t\tbyte[] masterKey)");
 		sb.AppendLine("\t{");
 		sb.AppendLine("\t\tvar encryptionProvider = new AesGcmEncryptionProvider(masterKey);");
+		sb.AppendLine("\t\tvar indexProvider = new PersistentIndexProvider(dataDirectory, encryptionProvider);");
+		sb.AppendLine("\t\tvar jsonOptions = new JsonSerializerOptions");
+		sb.AppendLine("\t\t{");
+		sb.AppendLine("\t\t\tTypeInfoResolver = CabinetJsonSerializerContext.Default");
+		sb.AppendLine("\t\t};");
 		sb.AppendLine("\t\treturn new FileOfflineStore(");
 		sb.AppendLine("\t\t\tdataDirectory,");
 		sb.AppendLine("\t\t\tencryptionProvider,");
-		sb.AppendLine("\t\t\tnew JsonSerializerOptions");
-		sb.AppendLine("\t\t\t{");
-		sb.AppendLine("\t\t\t\tTypeInfoResolver = CabinetJsonSerializerContext.Default");
-		sb.AppendLine("\t\t\t});");
+		sb.AppendLine("\t\t\tjsonOptions,");
+		sb.AppendLine("\t\t\tindexProvider);");
 		sb.AppendLine("\t}");
 		sb.AppendLine("}");
 
