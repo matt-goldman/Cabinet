@@ -1,7 +1,9 @@
+using Cabinet;
 using Cabinet.Core;
 
 namespace demo.Models;
 
+[AotRecord]
 public class LessonRecord
 {
 	public Guid Id { get; set; } = Guid.NewGuid();

@@ -70,6 +70,9 @@
 
 	<ItemGroup>
 	  <ProjectReference Include="..\src\Cabinet.csproj" />
+	  <ProjectReference Include="..\src\Cabinet.SourceGenerators\Cabinet.SourceGenerators.csproj" 
+	                    OutputItemType="Analyzer" 
+	                    ReferenceOutputAssembly="false" />
 	</ItemGroup>
 
 </Project>

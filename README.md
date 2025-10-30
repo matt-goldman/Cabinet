@@ -144,18 +144,42 @@ Syntactic sugar for cleaner code:
 dotnet add package Cabinet
 ```
 
-### Using Source Generator (Easiest for AOT)
+### Using Source Generator (Recommended for AOT)
 
-Decorate your record classes with `[AotRecord]` for automatic AOT setup:
+The source generator creates RecordSet extensions for AOT-safe usage. **Two steps are required:**
+
+#### Step 1: Create a JsonSerializerContext (Required)
+
+You must manually create a `JsonSerializerContext` in your project for AOT compilation:
+
+```csharp
+using System.Text.Json.Serialization;
+
+namespace MyApp;
+
+[JsonSerializable(typeof(LessonRecord))]
+[JsonSerializable(typeof(List<LessonRecord>))]
+[JsonSourceGenerationOptions(
+    WriteIndented = false,
+    PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
+    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
+public partial class CabinetJsonContext : JsonSerializerContext
+{
+}
+```
+
+> **Why is this required?** Source generators can't reliably coordinate with System.Text.Json's generator in the same compilation pass. By creating this in your own code, System.Text.Json can properly implement the abstract members for AOT compatibility.
+
+#### Step 2: Mark Your Records and Use Generated Extensions
 
 ```csharp
 using Cabinet;
 
 // 1. Decorate your record types
 [AotRecord]
-public class LessonRecord
+public record LessonRecord
 {
-    public string LessonRecordId { get; set; } = "";
+    public string Id { get; set; } = "";
     public string Subject { get; set; } = "";
     public string Description { get; set; } = "";
 }
@@ -168,21 +192,22 @@ RandomNumberGenerator.Fill(masterKey);
 
 var store = CabinetStoreExtensions.CreateCabinetStore(
     FileSystem.AppDataDirectory, 
-    masterKey);
+    masterKey,
+    CabinetJsonContext.Default);  // Pass your context
 
-RecordSet<LessonRecord> lessons => new(store);
+var lessons = store.CreateLessonRecordRecordSet();  // Generated method
 
 // 3. Load and use
 await lessons.LoadAsync();
 await lessons.AddAsync(new LessonRecord { 
-    LessonRecordId = "001", 
+    Id = "001", 
     Subject = "Science",
     Description = "Observed seagulls at the beach"
 });
 var all = await lessons.GetAllAsync();
 ```
 
-See [Source Generator Guide](_docs/source-generator-example.md) for more details.
+See [Source Generator Usage Guide](_docs/source-generator-usage.md) for complete details.
 
 ### Using `RecordSet<T>` (Manual Setup)
 
