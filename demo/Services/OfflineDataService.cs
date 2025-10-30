@@ -72,8 +72,7 @@ public class OfflineDataService
 			if (includeAttachments)
 			{
 				var photoContent = Encoding.UTF8.GetBytes($"PHOTO data for {child}: {RandomNumberGenerator.GetInt32(1000000)}");
-				using var photoStream = new MemoryStream(photoContent);
-				var photoAttachment = new FileAttachment($"{child}_photo.jpg", "image/jpeg", photoStream);
+				var photoAttachment = new FileAttachment($"{child}_photo.jpg", "image/jpeg", photoContent);
 
 				lesson.Attachments = [photoAttachment];
 				
