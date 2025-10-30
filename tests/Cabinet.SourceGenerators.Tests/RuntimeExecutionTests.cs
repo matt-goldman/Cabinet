@@ -261,7 +261,7 @@ namespace TestNamespace
 		driver = (CSharpGeneratorDriver)driver.RunGeneratorsAndUpdateCompilation(
 			compilation, 
 			out var outputCompilation, 
-			out var diagnostics);
+			out _);
 
 		// Output generated code for debugging
 		_output.WriteLine("=== GENERATED FILES ===");
