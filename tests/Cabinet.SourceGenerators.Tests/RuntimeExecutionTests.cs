@@ -245,12 +245,9 @@ namespace TestNamespace
 		
 		// Add required assembly references
 		var loadedAssemblies = AppDomain.CurrentDomain.GetAssemblies();
-		foreach (var asm in loadedAssemblies)
+		foreach (var asm in loadedAssemblies.Where(asm => !asm.IsDynamic && !string.IsNullOrWhiteSpace(asm.Location)))
 		{
-			if (!asm.IsDynamic && !string.IsNullOrWhiteSpace(asm.Location))
-			{
-				references.Add(MetadataReference.CreateFromFile(asm.Location));
-			}
+			references.Add(MetadataReference.CreateFromFile(asm.Location));
 		}
 
 		var compilation = CSharpCompilation.Create(
