@@ -187,12 +187,12 @@ public class OfflineDataService
 	/// <summary>
 	/// Get counts for each record type to show aggregated store usage.
 	/// </summary>
-	public Task<(int lessonCount, int studentCount)> GetRecordCountsAsync()
+	public (int lessonCount, int studentCount) GetRecordCounts()
 	{
 		// RecordSets track counts in memory
 		var lessonCount = _lessons.Count();
 		var studentCount = _students.Count();
-		return Task.FromResult((lessonCount, studentCount));
+		return (lessonCount, studentCount);
 	}
 
 	public record SearchResultWithData(string RecordType, string Title, string Details);

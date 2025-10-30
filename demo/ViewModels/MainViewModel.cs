@@ -40,7 +40,7 @@ public partial class MainViewModel(OfflineDataService dataService) : ObservableO
 			var (count, duration) = await dataService.GenerateAndSaveRecordsAsync(RecordCount, IncludeAttachments);
 
 			// Update counts to show aggregated store usage
-			await UpdateRecordCounts();
+			UpdateRecordCounts();
 
 			Results = $"✅ Generated and saved {count} record(s) in {duration.TotalMilliseconds:F2}ms\n" +
 				$"📊 Total: {LessonCount} lessons, {StudentCount} students";
@@ -142,9 +142,9 @@ public partial class MainViewModel(OfflineDataService dataService) : ObservableO
 		}
 	}
 
-	private async Task UpdateRecordCounts()
+	private void UpdateRecordCounts()
 	{
-		var (lessonCount, studentCount) = await dataService.GetRecordCountsAsync();
+		var (lessonCount, studentCount) = dataService.GetRecordCounts();
 		LessonCount = lessonCount;
 		StudentCount = studentCount;
 	}
