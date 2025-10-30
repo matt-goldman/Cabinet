@@ -1,5 +1,7 @@
 # Cabinet
 
+**Fun fact:** The original issue in my app that prompted me to build this turned out to be nothing to do with my data storage. Fixed a startup deadlock and everything worked, with LiteDB. So...I guess I learned something...?
+
 ![NuGet Version](https://img.shields.io/nuget/v/Cabinet?style=for-the-badge)
 
 ![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/matt-goldman/cabinet/ci.yml?branch=main&style=for-the-badge)
