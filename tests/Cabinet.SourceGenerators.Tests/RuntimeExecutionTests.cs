@@ -105,11 +105,10 @@ namespace TestNamespace
 		{
 			var store = createStoreMethod.Invoke(null, new object[] { _testDirectory, testKey });
 			
-			_output.WriteLine($"✓ CreateCabinetStore invoked successfully!");
-			_output.WriteLine($"Returned type: {store?.GetType().FullName ?? "null"}");
-			
 			Assert.NotNull(store);
 
+			_output.WriteLine($"✓ CreateCabinetStore invoked successfully!");
+			_output.WriteLine($"Returned type: {store.GetType().FullName}");
 			// Check if it's actually a FileOfflineStore
 			var storeType = store.GetType();
 			_output.WriteLine($"Store type: {storeType.FullName}");
