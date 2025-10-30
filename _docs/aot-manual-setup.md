@@ -203,11 +203,6 @@ internal partial class MyJsonContext : JsonSerializerContext { }
 // The source generator NEVER creates this - you always write it manually.
 ```
 
-[JsonSerializable(typeof(List<LessonRecord>))]
-internal partial class MyJsonContext : JsonSerializerContext { }
-
-```
-
 **Difference:** `public` vs `internal`. That's it. Everything else is identical.
 
 #### Store Creation
