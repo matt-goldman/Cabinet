@@ -59,7 +59,7 @@ public class AotRecordGenerator : IIncrementalGenerator
 		if (idProperty is null)
 			return null;
 
-		// Check if class is public - we'll validate this in Execute and report diagnostic
+		// Store whether the class is public for informational purposes; no validation occurs
 		var isPublic = symbol.DeclaredAccessibility == Accessibility.Public;
 
 		// Determine accessibility modifier
