@@ -1,4 +1,5 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+﻿using System.Text;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using demo.Services;
 
@@ -86,21 +87,22 @@ public partial class MainViewModel(OfflineDataService dataService) : ObservableO
 			}
 			else
 			{
-				var resultText = $"🔍 Found {count} result(s) in {duration.TotalMilliseconds:F2}ms\n" +
-					$"Searched across both LessonRecord and StudentRecord types\n\n";
+				var resultBuilder = new StringBuilder();
+				resultBuilder.Append($"🔍 Found {count} result(s) in {duration.TotalMilliseconds:F2}ms\n");
+				resultBuilder.Append($"Searched across both LessonRecord and StudentRecord types\n\n");
 				
 				foreach (var result in results.Take(10))
 				{
-					resultText += $"📝 [{result.RecordType}] {result.Title}\n";
-					resultText += $"   {result.Details}\n\n";
+					resultBuilder.Append($"📝 [{result.RecordType}] {result.Title}\n");
+					resultBuilder.Append($"   {result.Details}\n\n");
 				}
 
 				if (count > 10)
 				{
-					resultText += $"... and {count - 10} more";
+					resultBuilder.Append($"... and {count - 10} more");
 				}
 
-				Results = resultText;
+				Results = resultBuilder.ToString();
 			}
 		}
 		catch (Exception ex)
