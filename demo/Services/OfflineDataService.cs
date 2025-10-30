@@ -103,7 +103,7 @@ public class OfflineDataService
 			{
 				// Pattern 1: FileAttachment property - Cabinet serializes it with the record
 				var photoBytes = Encoding.UTF8.GetBytes($"PHOTO:{name}:{RandomNumberGenerator.GetInt32(1000000)}");
-				student.ProfilePhoto = new FileAttachment($"{name}_profile.jpg", "image/jpeg", new MemoryStream(photoBytes));
+				student.ProfilePhoto = new FileAttachment($"{name}_profile.jpg", "image/jpeg", photoBytes);
 
 				// Pattern 2: Custom base64 encoding - You control the encoding
 				var certBytes = Encoding.UTF8.GetBytes($"CERTIFICATE:{name}:Age-{student.Age}");
