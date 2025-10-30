@@ -1,8 +1,4 @@
-using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Linq;
-using System.Reflection;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Xunit;
@@ -62,10 +58,9 @@ namespace TestNamespace
 
 		// Check that the generated code contains expected elements
 		var allGeneratedCode = string.Join("\n", generatedTrees.Select(t => t.ToString()));
-		Assert.Contains("CabinetJsonSerializerContext", allGeneratedCode);
 		Assert.Contains("TestRecordExtensions", allGeneratedCode);
 		Assert.Contains("CabinetStoreExtensions", allGeneratedCode);
-		Assert.Contains("record => record.Id", allGeneratedCode);
+		Assert.Contains("record => record.Id.ToString()", allGeneratedCode);
 	}
 
 	[Fact]
@@ -94,7 +89,7 @@ namespace TestNamespace
 		{
 			Assert.Fail("No generated code was produced");
 		}
-		Assert.Contains("record => record.LessonRecordId", allGeneratedCode);
+		Assert.Contains("record => record.LessonRecordId.ToString()", allGeneratedCode);
 	}
 
 	[Fact]
@@ -119,7 +114,7 @@ namespace TestNamespace
 		Assert.Empty(diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error));
 
 		var allGeneratedCode = string.Join("\n", compilation.SyntaxTrees.Skip(1).Select(t => t.ToString()));
-		Assert.Contains("record => record.CustomId", allGeneratedCode);
+		Assert.Contains("record => record.CustomId.ToString()", allGeneratedCode);
 	}
 
 	[Fact]
@@ -150,15 +145,114 @@ namespace TestNamespace
 
 		var allGeneratedCode = string.Join("\n", compilation.SyntaxTrees.Skip(1).Select(t => t.ToString()));
 		
-		// Both types should be in JSON context
-		Assert.Contains("JsonSerializable(typeof(FirstRecord))", allGeneratedCode);
-		Assert.Contains("JsonSerializable(typeof(SecondRecord))", allGeneratedCode);
-		Assert.Contains("JsonSerializable(typeof(List<FirstRecord>))", allGeneratedCode);
-		Assert.Contains("JsonSerializable(typeof(List<SecondRecord>))", allGeneratedCode);
-
 		// Both should have extensions
 		Assert.Contains("FirstRecordExtensions", allGeneratedCode);
 		Assert.Contains("SecondRecordExtensions", allGeneratedCode);
+	}
+
+	[Fact]
+	public void GeneratesInternalCodeForInternalRecordTypes()
+	{
+		// Arrange
+		string source = AttributeSource + @"
+namespace TestNamespace
+{
+	[Cabinet.AotRecord]
+	internal class InternalRecord
+	{
+		public string Id { get; set; } = string.Empty;
+		public string Data { get; set; } = string.Empty;
+	}
+}";
+
+		// Act
+		var (compilation, diagnostics) = CreateCompilation(source);
+
+		// Assert
+		Assert.Empty(diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error));
+
+		var allGeneratedCode = string.Join("\n", compilation.SyntaxTrees.Skip(1).Select(t => t.ToString()));
+		
+		// Extension class should be internal
+		Assert.Contains("internal static class InternalRecordExtensions", allGeneratedCode);
+		
+		// CabinetStoreExtensions should be internal when any record is internal
+		Assert.Contains("internal static class CabinetStoreExtensions", allGeneratedCode);
+		
+		// CreateCabinetStore should be internal
+		Assert.Contains("internal static IOfflineStore CreateCabinetStore", allGeneratedCode);
+	}
+
+	[Fact]
+	public void GeneratesPublicCodeForPublicRecordTypes()
+	{
+		// Arrange
+		string source = AttributeSource + @"
+namespace TestNamespace
+{
+	[Cabinet.AotRecord]
+	public class PublicRecord
+	{
+		public string Id { get; set; } = string.Empty;
+		public string Data { get; set; } = string.Empty;
+	}
+}";
+
+		// Act
+		var (compilation, diagnostics) = CreateCompilation(source);
+
+		// Assert
+		Assert.Empty(diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error));
+
+		var allGeneratedCode = string.Join("\n", compilation.SyntaxTrees.Skip(1).Select(t => t.ToString()));
+		
+		// Extension class should be public
+		Assert.Contains("public static class PublicRecordExtensions", allGeneratedCode);
+		
+		// CabinetStoreExtensions should be public when all records are public
+		Assert.Contains("public static class CabinetStoreExtensions", allGeneratedCode);
+		
+		// CreateCabinetStore should be public
+		Assert.Contains("public static IOfflineStore CreateCabinetStore", allGeneratedCode);
+	}
+
+	[Fact]
+	public void GeneratesInternalStoreExtensionsWhenMixingPublicAndInternalRecords()
+	{
+		// Arrange
+		string source = AttributeSource + @"
+namespace TestNamespace
+{
+	[Cabinet.AotRecord]
+	public class PublicRecord
+	{
+		public string Id { get; set; } = string.Empty;
+	}
+
+	[Cabinet.AotRecord]
+	internal class InternalRecord
+	{
+		public string Id { get; set; } = string.Empty;
+	}
+}";
+
+		// Act
+		var (compilation, diagnostics) = CreateCompilation(source);
+
+		// Assert
+		Assert.Empty(diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error));
+
+		var allGeneratedCode = string.Join("\n", compilation.SyntaxTrees.Skip(1).Select(t => t.ToString()));
+		
+		// Individual extension classes match their record's accessibility
+		Assert.Contains("public static class PublicRecordExtensions", allGeneratedCode);
+		Assert.Contains("internal static class InternalRecordExtensions", allGeneratedCode);
+		
+		// CabinetStoreExtensions should be internal (most restrictive)
+		Assert.Contains("internal static class CabinetStoreExtensions", allGeneratedCode);
+		
+		// CreateCabinetStore should be internal
+		Assert.Contains("internal static IOfflineStore CreateCabinetStore", allGeneratedCode);
 	}
 
 	private (Compilation, ImmutableArray<Diagnostic>) CreateCompilation(string source)

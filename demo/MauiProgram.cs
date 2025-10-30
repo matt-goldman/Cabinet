@@ -1,10 +1,9 @@
 ﻿using demo.Services;
 using demo.ViewModels;
 using Microsoft.Extensions.Logging;
+using Cabinet;
 using Cabinet.Abstractions;
-using Cabinet.Core;
-using Cabinet.Index;
-using Cabinet.Security;
+using Cabinet.Generated;
 using System.Security.Cryptography;
 
 namespace demo;
@@ -22,7 +21,7 @@ public static class MauiProgram
 				fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
 			});
 
-		// Configure offline data store
+		// Configure offline data store using source-generated method
 		builder.Services.AddSingleton<IOfflineStore>(sp =>
 		{
             var OfflineKey = SecureStorage.GetAsync("CabinetMasterKey").GetAwaiter().GetResult();
@@ -44,13 +43,13 @@ public static class MauiProgram
                 masterKey = Convert.FromBase64String(OfflineKey);
             }
 
-            var encryptionProvider = new AesGcmEncryptionProvider(masterKey);
             var rootPath = Path.Combine(FileSystem.AppDataDirectory, "Cabinet");
 
-            // Use persistent index provider that stores encrypted index to disk
-            var indexProvider = new PersistentIndexProvider(rootPath, encryptionProvider);
-
-            return new FileOfflineStore(rootPath, encryptionProvider, indexProvider);
+            // Use source-generated store creation with AOT-safe JSON serialization
+            return CabinetStoreExtensions.CreateCabinetStore(
+                rootPath, 
+                masterKey, 
+                CabinetJsonContext.Default);
         });
 
 		builder.Services.AddSingleton<OfflineDataService>();

@@ -1,56 +1,167 @@
 ﻿using demo.Models;
 using Cabinet.Abstractions;
 using Cabinet.Core;
+using Cabinet.Generated;
 using System.Diagnostics;
 using System.Security.Cryptography;
+using System.Text;
 
 namespace demo.Services;
 
-public class OfflineDataService(IOfflineStore store)
+/// <summary>
+/// Demonstrates Cabinet best practices:
+/// - Using RecordSet for type-safe record management
+/// - Aggregated file stores (single store for multiple record types)
+/// - Both Stream-based and custom-encoded attachments
+/// - Attachments as record properties
+/// </summary>
+public class OfflineDataService
 {
-    private static readonly string[] _subjects =
+	private readonly IOfflineStore _store;
+	private readonly RecordSet<LessonRecord> _lessons;
+	private readonly RecordSet<StudentRecord> _students;
+
+	private static readonly string[] _subjects =
 		["Maths", "Science", "English", "Art", "Geography", "Music"];
 
-    private static readonly string[] _activities =
+	private static readonly string[] _activities =
 		["counted seagulls", "built a volcano", "painted a landscape",
 		 "read a story", "played piano", "made a map"];
 
-	private static readonly string[] _children = ["Alice", "Ben", "Chloe", "Dylan"];
+	private static readonly string[] _childNames = ["Alice", "Ben", "Chloe", "Dylan"];
+
+	public OfflineDataService(IOfflineStore store)
+	{
+		_store = store;
+		
+		// Use source-generated RecordSet extensions for type-safe access
+		_lessons = store.CreateLessonRecordRecordSet();
+		_students = store.CreateStudentRecordRecordSet();
+	}
 
 
+	/// <summary>
+	/// Generates sample records demonstrating both LessonRecord and StudentRecord.
+	/// Shows FileAttachment usage both as separate parameter and as record properties.
+	/// Uses RecordSet for type-safe record management.
+	/// </summary>
 	public async Task<(int count, TimeSpan duration)> GenerateAndSaveRecordsAsync(int count, bool includeAttachments = false)
 	{
 		var stopwatch = Stopwatch.StartNew();
 
-		for (int i = 0; i < count; i++)
+		// Generate mix of lessons and students (60/40 split)
+		var lessonsToGenerate = (int)(count * 0.6);
+		var studentsToGenerate = count - lessonsToGenerate;
+
+		// Generate lesson records
+		for (var i = 0; i < lessonsToGenerate; i++)
 		{
-			var record = GenerateRandomRecord();
-			var attachments = includeAttachments ? new[] { await CreateRandomAttachmentAsync(record.Id.ToString()) } : null;
-			await store.SaveAsync(record.Id.ToString(), record, attachments);
+			var child = _childNames[Random.Shared.Next(_childNames.Length)];
+			var lesson = new LessonRecord
+			{
+				Id = Guid.NewGuid(),
+				Date = DateOnly.FromDateTime(DateTime.Today.AddDays(-Random.Shared.Next(30))),
+				Subject = _subjects[i % _subjects.Length],
+				Description = $"{child} {_activities[Random.Shared.Next(_activities.Length)]} in {_subjects[i % _subjects.Length]} class.",
+				Children = [child],
+				Tags = [_subjects[i % _subjects.Length], child, "lesson"],
+			};
+
+			// Demonstrate attachment patterns for lessons:
+			// 1. Add attachments to Attachments collection property (stored with record)
+			if (includeAttachments)
+			{
+				var photoContent = Encoding.UTF8.GetBytes($"PHOTO data for {child}: {RandomNumberGenerator.GetInt32(1000000)}");
+				var photoAttachment = new FileAttachment($"{child}_photo.jpg", "image/jpeg", photoContent);
+
+				lesson.Attachments = [photoAttachment];
+				
+				// RecordSet<T>.AddAsync - uses RecordSet for type-safe access
+				// Must be called before photoStream is disposed
+				await _lessons.AddAsync(lesson);
+			}
+			else
+			{
+				// RecordSet<T>.AddAsync - uses RecordSet for type-safe access
+				await _lessons.AddAsync(lesson);
+			}
+		}
+
+		// Generate student records
+		for (var i = 0; i < studentsToGenerate; i++)
+		{
+			var name = _childNames[Random.Shared.Next(_childNames.Length)];
+			var student = new StudentRecord
+			{
+				Id = $"student-{Guid.NewGuid()}",
+				Name = name,
+				Age = Random.Shared.Next(6, 13),
+				Grade = $"Grade {Random.Shared.Next(1, 7)}",
+				Subjects = [_subjects[Random.Shared.Next(_subjects.Length)]],
+				EnrolmentDate = DateTime.UtcNow.AddDays(-Random.Shared.Next(365)),
+			};
+
+			// Demonstrate attachment patterns for students:
+			// 1. FileAttachment as property (ProfilePhoto)
+			// 2. Custom encoding (CertificateBase64)
+			if (includeAttachments)
+			{
+				// Pattern 1: FileAttachment property - Cabinet serializes it with the record
+				var photoBytes = Encoding.UTF8.GetBytes($"PHOTO:{name}:{RandomNumberGenerator.GetInt32(1000000)}");
+				using var photoStream = new MemoryStream(photoBytes);
+				student.ProfilePhoto = new FileAttachment($"{name}_profile.jpg", "image/jpeg", photoStream);
+
+				// Pattern 2: Custom base64 encoding - You control the encoding
+				var certBytes = Encoding.UTF8.GetBytes($"CERTIFICATE:{name}:Age-{student.Age}");
+				student.CertificateBase64 = Convert.ToBase64String(certBytes);
+				
+				// RecordSet<T>.AddAsync - FileAttachment properties handled automatically
+				// Must be called before photoStream is disposed
+				await _students.AddAsync(student);
+			}
+			else
+			{
+				// RecordSet<T>.AddAsync - FileAttachment properties handled automatically
+				await _students.AddAsync(student);
+			}
 		}
 
 		stopwatch.Stop();
+		Debug.WriteLine($"Generated {lessonsToGenerate} lessons and {studentsToGenerate} students in {stopwatch.ElapsedMilliseconds}ms");
 		return (count, stopwatch.Elapsed);
 	}
 
+	/// <summary>
+	/// Search across both record types demonstrating unified search.
+	/// </summary>
 	public async Task<(int count, TimeSpan duration, IEnumerable<SearchResultWithData> results)> SearchRecordsAsync(string query)
 	{
 		var stopwatch = Stopwatch.StartNew();
-		var searchResults = await store.FindAsync(query);
 		
-		// Load the actual records for each search result to get metadata
+		// Search across both record types using RecordSet
+		var lessonResults = await _lessons.FindAsync(query);
+		var studentResults = await _students.FindAsync(query);
+		
+		// Combine results
 		var resultsWithData = new List<SearchResultWithData>();
-		foreach (var result in searchResults)
+		
+		foreach (var lesson in lessonResults)
 		{
-			var record = await store.LoadAsync<LessonRecord>(result.RecordId);
-			if (record != null)
-			{
-				resultsWithData.Add(new SearchResultWithData(result, record));
-			}
+			resultsWithData.Add(new SearchResultWithData(
+				"Lesson", 
+				$"{lesson.Subject} - {lesson.Date:yyyy-MM-dd}", 
+				lesson.Description));
+		}
+		
+		foreach (var student in studentResults)
+		{
+			resultsWithData.Add(new SearchResultWithData(
+				"Student", 
+				student.Name, 
+				$"Age {student.Age}, {student.Grade}"));
 		}
 		
 		stopwatch.Stop();
-
 		return (resultsWithData.Count, stopwatch.Elapsed, resultsWithData);
 	}
 
@@ -59,16 +170,16 @@ public class OfflineDataService(IOfflineStore store)
 		var stopwatch = Stopwatch.StartNew();
 		
 		// Get the offline data directory
-		var CabinetPath = Path.Combine(FileSystem.AppDataDirectory, "Cabinet");
+		var cabinetPath = Path.Combine(FileSystem.AppDataDirectory, "Cabinet");
 		
 		int filesDeleted = 0;
 		
-		if (Directory.Exists(CabinetPath))
+		if (Directory.Exists(cabinetPath))
 		{
 			// Delete all files in subdirectories
 			foreach (var subdir in new[] { "records", "attachments", "index" })
 			{
-				var subdirPath = Path.Combine(CabinetPath, subdir);
+				var subdirPath = Path.Combine(cabinetPath, subdir);
 				if (Directory.Exists(subdirPath))
 				{
 					var files = Directory.GetFiles(subdirPath);
@@ -85,29 +196,16 @@ public class OfflineDataService(IOfflineStore store)
 		return Task.FromResult((filesDeleted, stopwatch.Elapsed));
 	}
 
-	public record SearchResultWithData(SearchResult SearchResult, LessonRecord Record);
-
-	private static LessonRecord GenerateRandomRecord()
+	/// <summary>
+	/// Get counts for each record type to show aggregated store usage.
+	/// </summary>
+	public (int lessonCount, int studentCount) GetRecordCounts()
 	{
-		var subject = _subjects[Random.Shared.Next(_subjects.Length)];
-		var activity = _activities[Random.Shared.Next(_activities.Length)];
-		var child = _children[Random.Shared.Next(_children.Length)];
-		var date = DateOnly.FromDateTime(DateTime.Today.AddDays(-Random.Shared.Next(30)));
-
-		return new LessonRecord
-		{
-			Date		= date,
-			Subject		= subject,
-			Description = $"{child} {activity} in {subject} class.",
-			Children	= [child],
-			Tags		= [subject.ToLower(), "learning"]
-		};
+		// RecordSets track counts in memory
+		var lessonCount = _lessons.Count();
+		var studentCount = _students.Count();
+		return (lessonCount, studentCount);
 	}
 
-    private static async Task<FileAttachment> CreateRandomAttachmentAsync(string recordId)
-	{
-		var bytes = RandomNumberGenerator.GetBytes(512);
-		var stream = new MemoryStream(bytes);
-		return await Task.FromResult(new FileAttachment($"random-{recordId}.bin", "application/octet-stream", stream));
-	}
+	public record SearchResultWithData(string RecordType, string Title, string Details);
 }
