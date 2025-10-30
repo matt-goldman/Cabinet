@@ -276,7 +276,7 @@ namespace TestNamespace
 			var content = tree.ToString();
 			if (content.Length > 1000)
 			{
-				_output.WriteLine(content.Substring(0, 1000) + "\n... (truncated)");
+				_output.WriteLine(content[..1000] + "\n... (truncated)");
 			}
 			else
 			{
