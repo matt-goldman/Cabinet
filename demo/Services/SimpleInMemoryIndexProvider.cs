@@ -18,7 +18,7 @@ public class SimpleInMemoryIndexProvider : IIndexProvider
 {
 	private readonly ConcurrentDictionary<string, string> _index = new();
 
-	public Task IndexAsync(string id, string content, IDictionary<string, string> metadata)
+	public Task IndexAsync(string id, string content, IDictionary<string, string> metadata, CancellationToken cancellationToken = default)
 	{
 		// Note: Metadata is intentionally not stored in this simple demo implementation.
 		// A production implementation (like EasyIndex) should persist metadata for:
@@ -31,7 +31,7 @@ public class SimpleInMemoryIndexProvider : IIndexProvider
 		return Task.CompletedTask;
 	}
 
-	public Task<IEnumerable<SearchResult>> QueryAsync(string query)
+	public Task<IEnumerable<SearchResult>> QueryAsync(string query, CancellationToken cancellationToken = default)
 	{
 		var lowerQuery = query.ToLowerInvariant();
 		var results = new List<SearchResult>();
@@ -69,7 +69,7 @@ public class SimpleInMemoryIndexProvider : IIndexProvider
 		return count;
 	}
 
-	public Task ClearAsync()
+	public Task ClearAsync(CancellationToken cancellationToken = default)
 	{
 		_index.Clear();
 		return Task.CompletedTask;
