@@ -72,14 +72,20 @@ public class OfflineDataService
 			if (includeAttachments)
 			{
 				var photoContent = Encoding.UTF8.GetBytes($"PHOTO data for {child}: {RandomNumberGenerator.GetInt32(1000000)}");
-				var photoStream = new MemoryStream(photoContent);
+				using var photoStream = new MemoryStream(photoContent);
 				var photoAttachment = new FileAttachment($"{child}_photo.jpg", "image/jpeg", photoStream);
 
 				lesson.Attachments = [photoAttachment];
+				
+				// RecordSet<T>.AddAsync - uses RecordSet for type-safe access
+				// Must be called before photoStream is disposed
+				await _lessons.AddAsync(lesson);
 			}
-
-			// RecordSet<T>.AddAsync - uses RecordSet for type-safe access
-			await _lessons.AddAsync(lesson);
+			else
+			{
+				// RecordSet<T>.AddAsync - uses RecordSet for type-safe access
+				await _lessons.AddAsync(lesson);
+			}
 		}
 
 		// Generate student records
@@ -103,15 +109,22 @@ public class OfflineDataService
 			{
 				// Pattern 1: FileAttachment property - Cabinet serializes it with the record
 				var photoBytes = Encoding.UTF8.GetBytes($"PHOTO:{name}:{RandomNumberGenerator.GetInt32(1000000)}");
-				student.ProfilePhoto = new FileAttachment($"{name}_profile.jpg", "image/jpeg", new MemoryStream(photoBytes));
+				using var photoStream = new MemoryStream(photoBytes);
+				student.ProfilePhoto = new FileAttachment($"{name}_profile.jpg", "image/jpeg", photoStream);
 
 				// Pattern 2: Custom base64 encoding - You control the encoding
 				var certBytes = Encoding.UTF8.GetBytes($"CERTIFICATE:{name}:Age-{student.Age}");
 				student.CertificateBase64 = Convert.ToBase64String(certBytes);
+				
+				// RecordSet<T>.AddAsync - FileAttachment properties handled automatically
+				// Must be called before photoStream is disposed
+				await _students.AddAsync(student);
 			}
-
-			// RecordSet<T>.AddAsync - FileAttachment properties handled automatically
-			await _students.AddAsync(student);
+			else
+			{
+				// RecordSet<T>.AddAsync - FileAttachment properties handled automatically
+				await _students.AddAsync(student);
+			}
 		}
 
 		stopwatch.Stop();
