@@ -1,10 +1,5 @@
-using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.IO;
-using System.Linq;
 using System.Reflection;
-using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Xunit;
@@ -266,6 +261,32 @@ namespace TestNamespace
 			}
 			_output.WriteLine("");
 		}
+	}
+
+	[Fact]
+	public void GeneratedStoreExtensions_ShouldIncludeNamedRecordSetMethods()
+	{
+		// Arrange
+		var (compilation, diagnostics) = CreateCompilation(TestRecordSource);
+		Assert.Empty(diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error));
+
+		// Act
+		var storeExtensionTree = compilation.SyntaxTrees
+			.FirstOrDefault(t => t.ToString().Contains("CabinetStoreExtensions"));
+		
+		Assert.NotNull(storeExtensionTree);
+		var generatedCode = storeExtensionTree.ToString();
+
+		_output.WriteLine("=== GENERATED STORE EXTENSIONS ===");
+		_output.WriteLine(generatedCode);
+
+		// Assert - Check for the named RecordSet creation method
+		Assert.Contains("CreateTestRecordRecordSet", generatedCode);
+		Assert.Contains("public static RecordSet<TestRecord>", generatedCode);
+		Assert.Contains("TestRecordExtensions.CreateRecordSetOptions()", generatedCode);
+		
+		// Verify it still has the CreateCabinetStore method
+		Assert.Contains("CreateCabinetStore", generatedCode);
 	}
 
 	private (Compilation, ImmutableArray<Diagnostic>) CreateCompilation(string source)

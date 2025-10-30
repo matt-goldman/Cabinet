@@ -1,10 +1,8 @@
-using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 
@@ -197,10 +195,21 @@ public class AotRecordGenerator : IIncrementalGenerator
 		sb.AppendLine("using Cabinet.Index;");
 		sb.AppendLine("using Cabinet.Security;");
 		sb.AppendLine();
+
+		// Add using statements for each namespace
+		var namespaces = classes.Select(c => c.Namespace).Distinct().OrderBy(n => n);
+		foreach (var ns in namespaces)
+		{
+			sb.AppendLine($"using {ns};");
+		}
+
+		sb.AppendLine();
 		sb.AppendLine("namespace Cabinet.Generated;");
 		sb.AppendLine();
 		sb.AppendLine("public static class CabinetStoreExtensions");
 		sb.AppendLine("{");
+		
+		// CreateCabinetStore method
 		sb.AppendLine("\tpublic static IOfflineStore CreateCabinetStore(");
 		sb.AppendLine("\t\tstring dataDirectory,");
 		sb.AppendLine("\t\tbyte[] masterKey)");
@@ -217,6 +226,15 @@ public class AotRecordGenerator : IIncrementalGenerator
 		sb.AppendLine("\t\t\tjsonOptions,");
 		sb.AppendLine("\t\t\tindexProvider);");
 		sb.AppendLine("\t}");
+
+		// Generate named RecordSet creation methods for each type
+		foreach (var classInfo in classes)
+		{
+			sb.AppendLine();
+			sb.AppendLine($"\tpublic static RecordSet<{classInfo.ClassName}> Create{classInfo.ClassName}RecordSet(this IOfflineStore store)");
+			sb.AppendLine($"\t\t=> new(store, {classInfo.ClassName}Extensions.CreateRecordSetOptions());");
+		}
+
 		sb.AppendLine("}");
 
 		return sb.ToString();
