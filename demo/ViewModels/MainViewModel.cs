@@ -21,6 +21,12 @@ public partial class MainViewModel(OfflineDataService dataService) : ObservableO
 	[ObservableProperty]
 	public partial bool IncludeAttachments { get; set; }
 
+	[ObservableProperty]
+	public partial int LessonCount { get; set; }
+
+	[ObservableProperty]
+	public partial int StudentCount { get; set; }
+
 	[RelayCommand]
 	private async Task GenerateRecords()
 	{
@@ -33,10 +39,17 @@ public partial class MainViewModel(OfflineDataService dataService) : ObservableO
 
 			var (count, duration) = await dataService.GenerateAndSaveRecordsAsync(RecordCount, IncludeAttachments);
 
-			Results = $"✅ Generated and saved {count} record(s) in {duration.TotalMilliseconds:F2}ms";
+			// Update counts to show aggregated store usage
+			await UpdateRecordCounts();
+
+			Results = $"✅ Generated and saved {count} record(s) in {duration.TotalMilliseconds:F2}ms\n" +
+				$"📊 Total: {LessonCount} lessons, {StudentCount} students";
+			
 			if (IncludeAttachments)
 			{
-				Results += $"\n📎 Each record includes a random attachment";
+				Results += $"\n📎 Attachments included:\n" +
+					"  • Lessons: PDF (SaveAsync param) + Photo (Attachments property)\n" +
+					"  • Students: ProfilePhoto (FileAttachment property) + CertificateBase64 (custom encoding)";
 			}
 		}
 		catch (Exception ex)
@@ -73,15 +86,13 @@ public partial class MainViewModel(OfflineDataService dataService) : ObservableO
 			}
 			else
 			{
-				var resultText = $"🔍 Found {count} result(s) for '{SearchTerm}' in {duration.TotalMilliseconds:F2}ms\n\n";
+				var resultText = $"🔍 Found {count} result(s) in {duration.TotalMilliseconds:F2}ms\n" +
+					$"Searched across both LessonRecord and StudentRecord types\n\n";
 				
 				foreach (var result in results.Take(10))
 				{
-					var record = result.Record;
-					resultText += $"📝 {record.Subject} - {record.Date:yyyy-MM-dd}\n";
-					resultText += $"   {record.Description}\n";
-					resultText += $"   Children: {string.Join(", ", record.Children)}\n";
-					resultText += $"   Score: {result.SearchResult.Score:F2}\n\n";
+					resultText += $"📝 [{result.RecordType}] {result.Title}\n";
+					resultText += $"   {result.Details}\n\n";
 				}
 
 				if (count > 10)
@@ -114,6 +125,10 @@ public partial class MainViewModel(OfflineDataService dataService) : ObservableO
 
 			var (filesDeleted, duration) = await dataService.PurgeDataAsync();
 
+			// Reset counts
+			LessonCount = 0;
+			StudentCount = 0;
+
 			Results = $"✅ Purged {filesDeleted} file(s) in {duration.TotalMilliseconds:F2}ms\n" +
 					  $"All records, attachments, and index data have been deleted.";
 		}
@@ -125,5 +140,12 @@ public partial class MainViewModel(OfflineDataService dataService) : ObservableO
 		{
 			IsBusy = false;
 		}
+	}
+
+	private async Task UpdateRecordCounts()
+	{
+		var (lessonCount, studentCount) = await dataService.GetRecordCountsAsync();
+		LessonCount = lessonCount;
+		StudentCount = studentCount;
 	}
 }
