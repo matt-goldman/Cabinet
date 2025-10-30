@@ -1,10 +1,15 @@
 # Source Generator Usage Guide
 
-> **⚠️ CRITICAL REQUIREMENT:** Before using the source generator, you **must** manually create a `JsonSerializerContext` in your project. This is required for AOT compilation and cannot be automated. See [Step 2: Create a JsonSerializerContext](#2-create-a-jsonserializercontext) below.
+> **⚠️ CRITICAL REQUIREMENTS:**
+>
+> 1. You **must** manually create a `JsonSerializerContext` in your project (System.Text.Json requires this for AOT, cannot be automated by source generators)
+> 2. **All record types must have the same accessibility** - All `[AotRecord]` classes and your `JsonSerializerContext` must be either all public or all internal (C# language rule: types in public members must be public)
+>
+> **The source generator only creates convenience methods** (RecordSet extensions, CreateCabinetStore). It does NOT generate JsonSerializerContext - you always create that yourself.
 
 ## Overview
 
-The Cabinet source generator (`AotRecordGenerator`) automatically creates RecordSet extensions and helper methods for records marked with the `[AotRecord]` attribute. This enables AOT-safe, strongly-typed access to your offline data.
+The Cabinet source generator (`AotRecordGenerator`) automatically creates RecordSet extensions and helper methods for records marked with the `[AotRecord]` attribute, matching the accessibility of your record classes.
 
 ## Basic Usage
 
@@ -15,6 +20,7 @@ using Cabinet;
 
 namespace MyApp.Models;
 
+// Public records - will generate public helper methods
 [AotRecord]
 public record LessonRecord
 {
@@ -23,11 +29,23 @@ public record LessonRecord
     public string Content { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
 }
+
+// Internal records - will generate internal helper methods
+[AotRecord]
+internal record InternalNote
+{
+    public Guid Id { get; set; }
+    public string Content { get; set; } = string.Empty;
+}
 ```
+
+**Important:** All `[AotRecord]` classes and your `JsonSerializerContext` must have the same accessibility. If you mix public and internal records, the generated `CabinetStoreExtensions` will be internal (most restrictive), so your `JsonSerializerContext` must also be internal.
 
 ### 2. Create a JsonSerializerContext
 
-**Important:** You must manually create a `JsonSerializerContext` in your project. Source generators cannot reliably chain with System.Text.Json's generator, so this must be in your own code:
+**Important:** You must manually create a `JsonSerializerContext` with the **same accessibility** as your records. Source generators cannot reliably chain with System.Text.Json's generator, so this must be in your own code.
+
+**Example with public records:**
 
 ```csharp
 using System.Text.Json.Serialization;
@@ -42,6 +60,33 @@ namespace MyApp;
     PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
     DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
 public partial class CabinetJsonContext : JsonSerializerContext
+{
+}
+```
+
+**Example with internal records:**
+
+```csharp
+using System.Text.Json.Serialization;
+using MyApp.Models;
+
+namespace MyApp;
+
+[JsonSerializable(typeof(InternalNote))]
+[JsonSerializable(typeof(List<InternalNote>))]
+internal partial class CabinetJsonContext : JsonSerializerContext
+{
+}
+```
+
+**Mixed public and internal records:**
+
+If you use both public and internal records, your context **must be internal** (C# rule: internal types can't appear in public members):
+
+```csharp
+[JsonSerializable(typeof(LessonRecord))]    // public record
+[JsonSerializable(typeof(InternalNote))]   // internal record
+internal partial class CabinetJsonContext : JsonSerializerContext  // must be internal
 {
 }
 ```
@@ -163,11 +208,32 @@ The ID property can be any type - the generator automatically calls `.ToString()
 
 ## Accessibility Modifiers
 
-Generated extension classes match the accessibility of your record class:
+Generated extension classes **match the accessibility** of your record classes:
 
-- `public record` → generates `public static class Extensions`
-- `internal record` → generates `internal static class Extensions`
-- etc.
+- `public record` → generates `public static class {TypeName}Extensions`
+- `internal record` → generates `internal static class {TypeName}Extensions`
+
+The shared `CabinetStoreExtensions` class uses the **most restrictive accessibility** from all your records:
+
+- If **any** record is `internal` → `CabinetStoreExtensions` is `internal`
+- If **all** records are `public` → `CabinetStoreExtensions` is `public`
+
+This ensures the `CreateCabinetStore` method can accept your `JsonSerializerContext` without accessibility conflicts.
+
+**Example:** If you have both public and internal records, the generated code will be:
+
+```csharp
+public static class LessonRecordExtensions { ... }      // matches public record
+internal static class InternalNoteExtensions { ... }    // matches internal record
+
+internal static class CabinetStoreExtensions            // internal (most restrictive)
+{
+    internal static IOfflineStore CreateCabinetStore(
+        string dataDirectory,
+        byte[] masterKey,
+        JsonSerializerContext jsonContext)  // can accept internal context
+}
+```
 
 ## AOT Compatibility
 
@@ -234,6 +300,31 @@ public static class MauiProgram
 ```
 
 ## Troubleshooting
+
+### "CS0053: Inconsistent accessibility"
+
+Your `JsonSerializerContext` and records have mismatched accessibility. **Solution:**
+
+Make sure all `[AotRecord]` classes and your `JsonSerializerContext` have the same accessibility:
+
+```csharp
+// ❌ Won't work - public context, internal record
+public partial class CabinetJsonContext : JsonSerializerContext { }
+[AotRecord]
+internal record MyRecord { ... }
+
+// ✓ Option 1: All public
+public partial class CabinetJsonContext : JsonSerializerContext { }
+[AotRecord]
+public record MyRecord { ... }
+
+// ✓ Option 2: All internal
+internal partial class CabinetJsonContext : JsonSerializerContext { }
+[AotRecord]
+internal record MyRecord { ... }
+```
+
+**Why:** C# requires that all types exposed through public members must also be public. If your `JsonSerializerContext` is public, all serialized types must be public. If you need internal types, make your context internal too.
 
 ### "CS0534: does not implement inherited abstract member"
 

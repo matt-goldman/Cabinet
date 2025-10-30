@@ -146,11 +146,17 @@ dotnet add package Cabinet
 
 ### Using Source Generator (Recommended for AOT)
 
-The source generator creates RecordSet extensions for AOT-safe usage. **Two steps are required:**
+The source generator creates RecordSet extensions and helper methods to reduce boilerplate.
+
+> **⚠️ IMPORTANT:**
+>
+> * You must manually create a `JsonSerializerContext` (System.Text.Json requirement for AOT - source generators cannot coordinate with each other reliably)
+> * **All record types and your JsonSerializerContext must have the same accessibility** - If using public records, use a public context. If using internal records, use an internal context. This is a C# language rule.
+> * The generator **only creates convenience methods**, not the JsonSerializerContext itself
 
 #### Step 1: Create a JsonSerializerContext (Required)
 
-You must manually create a `JsonSerializerContext` in your project for AOT compilation:
+You must manually create this in your project:
 
 ```csharp
 using System.Text.Json.Serialization;
@@ -171,6 +177,8 @@ public partial class CabinetJsonContext : JsonSerializerContext
 > **Why is this required?** Source generators can't reliably coordinate with System.Text.Json's generator in the same compilation pass. By creating this in your own code, System.Text.Json can properly implement the abstract members for AOT compatibility.
 
 #### Step 2: Mark Your Records and Use Generated Extensions
+
+The generator creates convenience methods (RecordSet extensions, CreateCabinetStore) for you:
 
 ```csharp
 using Cabinet;
@@ -211,10 +219,26 @@ See [Source Generator Usage Guide](_docs/source-generator-usage.md) for complete
 
 ### Using `RecordSet<T>` (Manual Setup)
 
+This approach gives you full control and supports **any accessibility level** (public, internal, private). You manually configure everything, including AOT-compatible JSON serialization.
+
 ```csharp
 using Cabinet;
 using Cabinet.Core;
 using Cabinet.Security;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
+// Your records can be internal/private
+internal record LessonRecord
+{
+    public string LessonId { get; set; } = "";
+    public string Subject { get; set; } = "";
+}
+
+// Create internal JsonSerializerContext for internal types
+[JsonSerializable(typeof(LessonRecord))]
+[JsonSerializable(typeof(List<LessonRecord>))]
+internal partial class MyJsonContext : JsonSerializerContext { }
 
 // 1. Setup storage (once at app startup)
 var masterKey = new byte[32];
@@ -222,7 +246,14 @@ RandomNumberGenerator.Fill(masterKey);
 // In production, store this in SecureStorage
 
 var encryption = new AesGcmEncryptionProvider(masterKey);
-var store = new FileOfflineStore(FileSystem.AppDataDirectory, encryption);
+var jsonOptions = new JsonSerializerOptions
+{
+    TypeInfoResolver = MyJsonContext.Default  // AOT-safe
+};
+var store = new FileOfflineStore(
+    FileSystem.AppDataDirectory, 
+    encryption,
+    jsonOptions);
 
 // 2. Create RecordSet for your domain type
 var options = new RecordSetOptions<LessonRecord>
@@ -236,6 +267,8 @@ await lessons.LoadAsync();
 await lessons.AddAsync(new LessonRecord { LessonId = "001", Subject = "Science" });
 var all = await lessons.GetAllAsync();
 ```
+
+See [Manual AOT Setup Guide](_docs/aot-manual-setup.md) for a complete example with internal types.
 
 ### Using IOfflineStore Directly (Advanced)
 
@@ -299,6 +332,8 @@ See Architecture
 
 | **Topic**                                                        | **Description**                                          |
 | ---------------------------------------------------------------- | -------------------------------------------------------- |
+| [docs/aot-manual-setup.md](_docs/aot-manual-setup.md)            | Manual AOT setup for internal/private types              |
+| [docs/source-generator-usage.md](_docs/source-generator-usage.md)| Complete source generator guide                          |
 | [docs/data-organization.md](_docs/data-organization.md)           | How to structure your data for speed and maintainability |
 | [docs/performance.md](_docs/performance.md)                       | Full benchmark data and comparisons                      |
 | [docs/performance-principles.md](_docs/performance-principles.md) | Why the design scales so well                            |

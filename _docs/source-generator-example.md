@@ -4,7 +4,10 @@ This example demonstrates how to use the Cabinet source generator for AOT-compat
 
 ## Prerequisites
 
-**⚠️ Important:** You must create a `JsonSerializerContext` in your project. The source generator cannot create this for you due to source generator coordination limitations.
+**⚠️ Critical Requirements:**
+
+1. You must create a `JsonSerializerContext` in your project. The source generator cannot create this for you due to source generator coordination limitations.
+2. **All record types MUST be public**. This is a C# language requirement - `JsonSerializerContext` must be public for AOT, which requires all serialized types to also be public.
 
 ## Step 1: Create Your JsonSerializerContext
 
@@ -37,13 +40,15 @@ public partial class CabinetJsonContext : JsonSerializerContext
 
 ## Step 2: Define Your Record Types
 
+**Important:** Records must be public to work with AOT compilation.
+
 ```csharp
 using Cabinet;
 
 namespace MyApp.Models;
 
 [AotRecord]
-public record LessonRecord
+public record LessonRecord  // Must be public
 {
     public string Id { get; set; } = string.Empty;
     public string Title { get; set; } = string.Empty;
@@ -53,7 +58,7 @@ public record LessonRecord
 }
 
 [AotRecord]
-public record ChildRecord
+public record ChildRecord  // Must be public
 {
     public string Id { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
@@ -64,6 +69,7 @@ public record ChildRecord
 ## Step 3: Use the Generated Code
 
 The source generator automatically creates:
+
 - RecordSet extension methods  
 - Store helper methods
 
@@ -109,6 +115,7 @@ var allLessons = await lessons.GetAllAsync();
 The generator automatically finds your ID property using these rules:
 
 ### Rule 1: Property named "Id"
+
 ```csharp
 [AotRecord]
 public class SimpleRecord
@@ -118,6 +125,7 @@ public class SimpleRecord
 ```
 
 ### Rule 2: Property named "{TypeName}Id"
+
 ```csharp
 [AotRecord]
 public class LessonRecord
@@ -127,6 +135,7 @@ public class LessonRecord
 ```
 
 ### Rule 3: Explicit specification
+
 ```csharp
 [AotRecord(IdPropertyName = "CustomIdentifier")]
 public class CustomRecord
@@ -248,6 +257,22 @@ The combination of your manual `JsonSerializerContext` and the Cabinet source ge
 You can now publish your application with `PublishAot=true`!
 
 ## Troubleshooting
+
+### "CABINET001: AotRecord type must be public"
+
+Your record is not public. Change it from `internal`, `private`, or `protected` to `public`:
+
+```csharp
+// ❌ This causes an error
+[AotRecord]
+internal record MyRecord { ... }
+
+// ✓ This works
+[AotRecord]
+public record MyRecord { ... }
+```
+
+**Why:** `JsonSerializerContext` must be public for AOT. C# requires all types referenced by public members to also be public.
 
 ### "CS0534: does not implement inherited abstract member"
 

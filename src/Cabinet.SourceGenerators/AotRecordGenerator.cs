@@ -59,6 +59,9 @@ public class AotRecordGenerator : IIncrementalGenerator
 		if (idProperty is null)
 			return null;
 
+		// Check if class is public - we'll validate this in Execute and report diagnostic
+		var isPublic = symbol.DeclaredAccessibility == Accessibility.Public;
+
 		// Determine accessibility modifier
 		var accessibility = symbol.DeclaredAccessibility switch
 		{
@@ -76,7 +79,9 @@ public class AotRecordGenerator : IIncrementalGenerator
 			symbol.ContainingNamespace.ToDisplayString(),
 			idProperty.Name,
 			fileName ?? symbol.Name,
-			accessibility);
+			accessibility,
+			isPublic,
+			symbol.Locations.FirstOrDefault());
 	}
 
 	private static IPropertySymbol? FindIdProperty(INamedTypeSymbol classSymbol, string? explicitName)
@@ -109,19 +114,19 @@ public class AotRecordGenerator : IIncrementalGenerator
 		if (classes.IsDefaultOrEmpty)
 			return;
 
-		var validClasses = classes.Where(c => c is not null).Cast<ClassInfo>().ToList();
-		if (validClasses.Count == 0)
+		var allClasses = classes.Where(c => c is not null).Cast<ClassInfo>().ToList();
+		if (allClasses.Count == 0)
 			return;
 
 		// Generate RecordSet extensions for each class
-		foreach (var classInfo in validClasses)
+		foreach (var classInfo in allClasses)
 		{
 			var extensionSource = GenerateRecordSetExtensions(classInfo);
 			context.AddSource($"{classInfo.ClassName}Extensions.g.cs", SourceText.From(extensionSource, Encoding.UTF8));
 		}
 
 		// Generate store helper extensions
-		var storeExtensionsSource = GenerateStoreExtensions(validClasses);
+		var storeExtensionsSource = GenerateStoreExtensions(allClasses);
 		context.AddSource("CabinetStoreExtensions.g.cs", SourceText.From(storeExtensionsSource, Encoding.UTF8));
 	}
 
@@ -179,11 +184,17 @@ public class AotRecordGenerator : IIncrementalGenerator
 		sb.AppendLine();
 		sb.AppendLine("namespace Cabinet.Generated;");
 		sb.AppendLine();
-		sb.AppendLine("public static class CabinetStoreExtensions");
+		
+		// Determine the most restrictive accessibility from all classes
+		// If any class is internal, the whole extension class must be internal
+		var hasInternal = classes.Any(c => c.Accessibility == "internal");
+		var extensionAccessibility = hasInternal ? "internal" : "public";
+		
+		sb.AppendLine($"{extensionAccessibility} static class CabinetStoreExtensions");
 		sb.AppendLine("{");
 		
-		// CreateCabinetStore method
-		sb.AppendLine("\tpublic static IOfflineStore CreateCabinetStore(");
+		// CreateCabinetStore method - uses the same accessibility as the extension class
+		sb.AppendLine($"\t{extensionAccessibility} static IOfflineStore CreateCabinetStore(");
 		sb.AppendLine("\t\tstring dataDirectory,");
 		sb.AppendLine("\t\tbyte[] masterKey,");
 		sb.AppendLine("\t\tJsonSerializerContext jsonContext)");
@@ -201,7 +212,7 @@ public class AotRecordGenerator : IIncrementalGenerator
 		foreach (var classInfo in classes)
 		{
 			sb.AppendLine();
-			sb.AppendLine($"\tpublic static RecordSet<{classInfo.ClassName}> Create{classInfo.ClassName}RecordSet(this IOfflineStore store)");
+			sb.AppendLine($"\t{classInfo.Accessibility} static RecordSet<{classInfo.ClassName}> Create{classInfo.ClassName}RecordSet(this IOfflineStore store)");
 			sb.AppendLine($"\t\t=> new(store, {classInfo.ClassName}Extensions.CreateRecordSetOptions());");
 		}
 
@@ -215,5 +226,7 @@ public class AotRecordGenerator : IIncrementalGenerator
 		string Namespace,
 		string IdPropertyName,
 		string FileName,
-		string Accessibility);
+		string Accessibility,
+		bool IsPublic,
+		Location? Location);
 }
