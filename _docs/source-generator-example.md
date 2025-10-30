@@ -258,22 +258,6 @@ You can now publish your application with `PublishAot=true`!
 
 ## Troubleshooting
 
-### "CABINET001: AotRecord type must be public"
-
-Your record is not public. Change it from `internal`, `private`, or `protected` to `public`:
-
-```csharp
-// ❌ This causes an error
-[AotRecord]
-internal record MyRecord { ... }
-
-// ✓ This works
-[AotRecord]
-public record MyRecord { ... }
-```
-
-**Why:** `JsonSerializerContext` must be public for AOT. C# requires all types referenced by public members to also be public.
-
 ### "CS0534: does not implement inherited abstract member"
 
 Your `JsonSerializerContext` wasn't processed by System.Text.Json's generator. Verify:
