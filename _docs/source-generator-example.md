@@ -7,7 +7,7 @@ This example demonstrates how to use the Cabinet source generator for AOT-compat
 **⚠️ Critical Requirements:**
 
 1. You must create a `JsonSerializerContext` in your project. The source generator cannot create this for you due to source generator coordination limitations.
-2. **All record types MUST be public**. This is a C# language requirement - `JsonSerializerContext` must be public for AOT, which requires all serialized types to also be public.
+2. **All record types and your JsonSerializerContext must have the same accessibility**. This is a C# language requirement - if your `JsonSerializerContext` is public, all serialized types must be public. If you need internal/private records, make your context internal too.
 
 ## Step 1: Create Your JsonSerializerContext
 
@@ -40,7 +40,7 @@ public partial class CabinetJsonContext : JsonSerializerContext
 
 ## Step 2: Define Your Record Types
 
-**Important:** Records must be public to work with AOT compilation.
+**Important:** Records can be public, internal, or private. They just need to match the accessibility of your `JsonSerializerContext`.
 
 ```csharp
 using Cabinet;
@@ -48,7 +48,7 @@ using Cabinet;
 namespace MyApp.Models;
 
 [AotRecord]
-public record LessonRecord  // Must be public
+public record LessonRecord  // Public record (requires public JsonSerializerContext)
 {
     public string Id { get; set; } = string.Empty;
     public string Title { get; set; } = string.Empty;
@@ -58,7 +58,7 @@ public record LessonRecord  // Must be public
 }
 
 [AotRecord]
-public record ChildRecord  // Must be public
+public record ChildRecord  // Public record (requires public JsonSerializerContext)
 {
     public string Id { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
@@ -258,21 +258,30 @@ You can now publish your application with `PublishAot=true`!
 
 ## Troubleshooting
 
-### "CABINET001: AotRecord type must be public"
+### "CS0053: Inconsistent accessibility"
 
-Your record is not public. Change it from `internal`, `private`, or `protected` to `public`:
+Your `JsonSerializerContext` and records have mismatched accessibility. **Solution:**
+
+Make sure all `[AotRecord]` classes and your `JsonSerializerContext` have the same accessibility:
 
 ```csharp
-// ❌ This causes an error
+// ❌ Won't work - public context, internal record
+public partial class CabinetJsonContext : JsonSerializerContext { }
 [AotRecord]
 internal record MyRecord { ... }
 
-// ✓ This works
+// ✓ Option 1: All public
+public partial class CabinetJsonContext : JsonSerializerContext { }
 [AotRecord]
 public record MyRecord { ... }
+
+// ✓ Option 2: All internal
+internal partial class CabinetJsonContext : JsonSerializerContext { }
+[AotRecord]
+internal record MyRecord { ... }
 ```
 
-**Why:** `JsonSerializerContext` must be public for AOT. C# requires all types referenced by public members to also be public.
+**Why:** C# requires that all types exposed through public members must also be public. If your `JsonSerializerContext` is public, all serialized types must be public. If you need internal types, make your context internal too.
 
 ### "CS0534: does not implement inherited abstract member"
 
