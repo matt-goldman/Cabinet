@@ -216,7 +216,7 @@ namespace TestNamespace
 	public void DiagnosticAnalysis_ShowAllCompilerMessages()
 	{
 		// Arrange & Act
-		var (compilation, diagnostics) = CreateCompilation(TestRecordSource);
+		var (_, diagnostics) = CreateCompilation(TestRecordSource);
 
 		// Output ALL diagnostics, not just errors
 		_output.WriteLine("=== ALL DIAGNOSTICS ===");
