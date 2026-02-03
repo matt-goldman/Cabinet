@@ -14,15 +14,15 @@ public class AotRecordGenerator : IIncrementalGenerator
 	public void Initialize(IncrementalGeneratorInitializationContext context)
 	{
 		// Find all classes and records with [AotRecord] attribute
-		var classDeclarations = context.SyntaxProvider
+		var types = context.SyntaxProvider
 			.ForAttributeWithMetadataName(
 				"Cabinet.AotRecordAttribute",
-				predicate: static (node, _) => node is ClassDeclarationSyntax or RecordDeclarationSyntax,
+				predicate: static (node, _) => node is TypeDeclarationSyntax or RecordDeclarationSyntax,
 				transform: static (context, _) => GetClassInfo(context))
 			.Where(static m => m is not null);
 
 		// Collect all classes and generate code
-		var compilationAndClasses = context.CompilationProvider.Combine(classDeclarations.Collect());
+		var compilationAndClasses = context.CompilationProvider.Combine(types.Collect());
 
 		context.RegisterSourceOutput(compilationAndClasses,
 			static (spc, source) => Execute(source.Left, source.Right!, spc));
@@ -30,7 +30,7 @@ public class AotRecordGenerator : IIncrementalGenerator
 
 	private static ClassInfo? GetClassInfo(GeneratorAttributeSyntaxContext context)
 	{
-		if (context.TargetNode is not ClassDeclarationSyntax and not RecordDeclarationSyntax)
+		if (context.TargetNode is not TypeDeclarationSyntax and not RecordDeclarationSyntax)
 			return null;
 
 		var symbol = context.TargetSymbol as INamedTypeSymbol;
