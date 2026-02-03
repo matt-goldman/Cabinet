@@ -144,7 +144,7 @@ namespace TestNamespace
 		Assert.Empty(diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error));
 
 		var allGeneratedCode = string.Join("\n", compilation.SyntaxTrees.Skip(1).Select(t => t.ToString()));
-		
+
 		// Both should have extensions
 		Assert.Contains("FirstRecordExtensions", allGeneratedCode);
 		Assert.Contains("SecondRecordExtensions", allGeneratedCode);
@@ -172,13 +172,13 @@ namespace TestNamespace
 		Assert.Empty(diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error));
 
 		var allGeneratedCode = string.Join("\n", compilation.SyntaxTrees.Skip(1).Select(t => t.ToString()));
-		
+
 		// Extension class should be internal
 		Assert.Contains("internal static class InternalRecordExtensions", allGeneratedCode);
-		
+
 		// CabinetStoreExtensions should be internal when any record is internal
 		Assert.Contains("internal static class CabinetStoreExtensions", allGeneratedCode);
-		
+
 		// CreateCabinetStore should be internal
 		Assert.Contains("internal static IOfflineStore CreateCabinetStore", allGeneratedCode);
 	}
@@ -205,13 +205,13 @@ namespace TestNamespace
 		Assert.Empty(diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error));
 
 		var allGeneratedCode = string.Join("\n", compilation.SyntaxTrees.Skip(1).Select(t => t.ToString()));
-		
+
 		// Extension class should be public
 		Assert.Contains("public static class PublicRecordExtensions", allGeneratedCode);
-		
+
 		// CabinetStoreExtensions should be public when all records are public
 		Assert.Contains("public static class CabinetStoreExtensions", allGeneratedCode);
-		
+
 		// CreateCabinetStore should be public
 		Assert.Contains("public static IOfflineStore CreateCabinetStore", allGeneratedCode);
 	}
@@ -243,16 +243,181 @@ namespace TestNamespace
 		Assert.Empty(diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error));
 
 		var allGeneratedCode = string.Join("\n", compilation.SyntaxTrees.Skip(1).Select(t => t.ToString()));
-		
+
 		// Individual extension classes match their record's accessibility
 		Assert.Contains("public static class PublicRecordExtensions", allGeneratedCode);
 		Assert.Contains("internal static class InternalRecordExtensions", allGeneratedCode);
-		
+
 		// CabinetStoreExtensions should be internal (most restrictive)
 		Assert.Contains("internal static class CabinetStoreExtensions", allGeneratedCode);
-		
+
 		// CreateCabinetStore should be internal
 		Assert.Contains("internal static IOfflineStore CreateCabinetStore", allGeneratedCode);
+	}
+
+	[Fact]
+	public void GeneratesCodeForRecordType()
+	{
+		// Arrange
+		string source = AttributeSource + @"
+namespace TestNamespace
+{
+	[Cabinet.AotRecord]
+	public record TestRecord
+	{
+		public string Id { get; set; } = string.Empty;
+		public string Name { get; set; } = string.Empty;
+	}
+}";
+
+		// Act
+		var (compilation, diagnostics) = CreateCompilation(source);
+
+		// Assert
+		var errors = diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error).ToList();
+		Assert.Empty(errors);
+
+		var allGeneratedCode = string.Join("\n", compilation.SyntaxTrees.Skip(1).Select(t => t.ToString()));
+		Assert.Contains("TestRecordExtensions", allGeneratedCode);
+		Assert.Contains("CabinetStoreExtensions", allGeneratedCode);
+		Assert.Contains("record => record.Id.ToString()", allGeneratedCode);
+	}
+
+	[Fact]
+	public void GeneratesCodeForRecordWithPositionalParameters()
+	{
+		// Arrange
+		string source = AttributeSource + @"
+namespace TestNamespace
+{
+	[Cabinet.AotRecord]
+	public record PositionalRecord(string Id, string Name, int Value);
+}";
+
+		// Act
+		var (compilation, diagnostics) = CreateCompilation(source);
+
+		// Assert
+		var errors = diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error).ToList();
+		Assert.Empty(errors);
+
+		var allGeneratedCode = string.Join("\n", compilation.SyntaxTrees.Skip(1).Select(t => t.ToString()));
+		Assert.Contains("PositionalRecordExtensions", allGeneratedCode);
+		Assert.Contains("record => record.Id.ToString()", allGeneratedCode);
+	}
+
+	[Fact]
+	public void GeneratesCodeForRecordWithTypedIdProperty()
+	{
+		// Arrange
+		string source = AttributeSource + @"
+namespace TestNamespace
+{
+	[Cabinet.AotRecord]
+	public record LessonRecord
+	{
+		public string LessonRecordId { get; set; } = string.Empty;
+		public string Subject { get; set; } = string.Empty;
+		public string Description { get; set; } = string.Empty;
+	}
+}";
+
+		// Act
+		var (compilation, diagnostics) = CreateCompilation(source);
+
+		// Assert
+		Assert.Empty(diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error));
+
+		var allGeneratedCode = string.Join("\n", compilation.SyntaxTrees.Skip(1).Select(t => t.ToString()));
+		Assert.Contains("LessonRecordExtensions", allGeneratedCode);
+		Assert.Contains("record => record.LessonRecordId.ToString()", allGeneratedCode);
+	}
+
+	[Fact]
+	public void GeneratesCodeForRecordWithExplicitIdPropertyName()
+	{
+		// Arrange
+		string source = AttributeSource + @"
+namespace TestNamespace
+{
+	[Cabinet.AotRecord(IdPropertyName = ""CustomId"")]
+	public record CustomRecord
+	{
+		public string CustomId { get; set; } = string.Empty;
+		public string Data { get; set; } = string.Empty;
+	}
+}";
+
+		// Act
+		var (compilation, diagnostics) = CreateCompilation(source);
+
+		// Assert
+		Assert.Empty(diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error));
+
+		var allGeneratedCode = string.Join("\n", compilation.SyntaxTrees.Skip(1).Select(t => t.ToString()));
+		Assert.Contains("record => record.CustomId.ToString()", allGeneratedCode);
+	}
+
+	[Fact]
+	public void GeneratesCodeForMixedClassesAndRecords()
+	{
+		// Arrange
+		string source = AttributeSource + @"
+namespace TestNamespace
+{
+	[Cabinet.AotRecord]
+	public class ClassRecord
+	{
+		public string Id { get; set; } = string.Empty;
+		public string ClassData { get; set; } = string.Empty;
+	}
+
+	[Cabinet.AotRecord]
+	public record RecordType
+	{
+		public string Id { get; set; } = string.Empty;
+		public string RecordData { get; set; } = string.Empty;
+	}
+}";
+
+		// Act
+		var (compilation, diagnostics) = CreateCompilation(source);
+
+		// Assert
+		Assert.Empty(diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error));
+
+		var allGeneratedCode = string.Join("\n", compilation.SyntaxTrees.Skip(1).Select(t => t.ToString()));
+
+		// Both should have extensions generated
+		Assert.Contains("ClassRecordExtensions", allGeneratedCode);
+		Assert.Contains("RecordTypeExtensions", allGeneratedCode);
+	}
+
+	[Fact]
+	public void GeneratesCodeForInternalRecord()
+	{
+		// Arrange
+		string source = AttributeSource + @"
+namespace TestNamespace
+{
+	[Cabinet.AotRecord]
+	internal record InternalRecord
+	{
+		public string Id { get; set; } = string.Empty;
+		public string Data { get; set; } = string.Empty;
+	}
+}";
+
+		// Act
+		var (compilation, diagnostics) = CreateCompilation(source);
+
+		// Assert
+		Assert.Empty(diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error));
+
+		var allGeneratedCode = string.Join("\n", compilation.SyntaxTrees.Skip(1).Select(t => t.ToString()));
+
+		// Extension class should be internal
+		Assert.Contains("internal static class InternalRecordExtensions", allGeneratedCode);
 	}
 
 	private (Compilation, ImmutableArray<Diagnostic>) CreateCompilation(string source)
@@ -260,7 +425,7 @@ namespace TestNamespace
 		var syntaxTree = CSharpSyntaxTree.ParseText(source);
 
 		var references = new List<MetadataReference>();
-		
+
 		// Add all assemblies that the source references
 		var assemblies = AppDomain.CurrentDomain.GetAssemblies();
 		foreach (var assembly in assemblies)
@@ -283,8 +448,8 @@ namespace TestNamespace
 		// Run the generator
 		var driver = CSharpGeneratorDriver.Create(generator);
 		driver = (CSharpGeneratorDriver)driver.RunGeneratorsAndUpdateCompilation(
-			compilation, 
-			out var outputCompilation, 
+			compilation,
+			out var outputCompilation,
 			out var diagnostics);
 
 		return (outputCompilation, diagnostics);

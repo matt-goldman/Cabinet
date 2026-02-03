@@ -13,16 +13,16 @@ public class AotRecordGenerator : IIncrementalGenerator
 {
 	public void Initialize(IncrementalGeneratorInitializationContext context)
 	{
-		// Find all classes with [AotRecord] attribute
-		var classDeclarations = context.SyntaxProvider
+		// Find all classes and records with [AotRecord] attribute
+		var types = context.SyntaxProvider
 			.ForAttributeWithMetadataName(
 				"Cabinet.AotRecordAttribute",
-				predicate: static (node, _) => node is ClassDeclarationSyntax,
+				predicate: static (node, _) => node is TypeDeclarationSyntax or RecordDeclarationSyntax,
 				transform: static (context, _) => GetClassInfo(context))
 			.Where(static m => m is not null);
 
 		// Collect all classes and generate code
-		var compilationAndClasses = context.CompilationProvider.Combine(classDeclarations.Collect());
+		var compilationAndClasses = context.CompilationProvider.Combine(types.Collect());
 
 		context.RegisterSourceOutput(compilationAndClasses,
 			static (spc, source) => Execute(source.Left, source.Right!, spc));
@@ -30,7 +30,7 @@ public class AotRecordGenerator : IIncrementalGenerator
 
 	private static ClassInfo? GetClassInfo(GeneratorAttributeSyntaxContext context)
 	{
-		if (context.TargetNode is not ClassDeclarationSyntax classDeclaration)
+		if (context.TargetNode is not TypeDeclarationSyntax and not RecordDeclarationSyntax)
 			return null;
 
 		var symbol = context.TargetSymbol as INamedTypeSymbol;
@@ -184,15 +184,15 @@ public class AotRecordGenerator : IIncrementalGenerator
 		sb.AppendLine();
 		sb.AppendLine("namespace Cabinet.Generated;");
 		sb.AppendLine();
-		
+
 		// Determine the most restrictive accessibility from all classes
 		// If any class is internal, the whole extension class must be internal
 		var hasInternal = classes.Any(c => c.Accessibility == "internal");
 		var extensionAccessibility = hasInternal ? "internal" : "public";
-		
+
 		sb.AppendLine($"{extensionAccessibility} static class CabinetStoreExtensions");
 		sb.AppendLine("{");
-		
+
 		// CreateCabinetStore method - uses the same accessibility as the extension class
 		sb.AppendLine($"\t{extensionAccessibility} static IOfflineStore CreateCabinetStore(");
 		sb.AppendLine("\t\tstring dataDirectory,");
