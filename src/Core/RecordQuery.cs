@@ -148,4 +148,11 @@ public sealed class RecordQuery<T>(IEnumerable<T> source)
 	/// <returns>The source enumerable</returns>
 	public IEnumerable<T> AsEnumerable()
 		=> source;
+
+	/// <summary>
+	/// Gets the underlying source as queryable.
+	/// </summary>
+	/// <returns>The source queryable</returns>
+	public IQueryable<T> AsQueryable()
+		=> source.AsQueryable();
 }

@@ -1,5 +1,6 @@
 using Cabinet.Abstractions;
 using Cabinet.Core;
+using System.Linq.Expressions;
 
 namespace Cabinet.Extensions;
 
@@ -32,6 +33,21 @@ public static class OfflineStoreExtensions
 		params string[] terms)
 	{
 		return await FindManyAsync<T>(store, CancellationToken.None, terms);
+	}
+
+	/// <summary>
+	/// Finds records matching the specified search terms and returns them as queryable.
+	/// This supports conditional predicate chaining before materialisation.
+	/// </summary>
+	/// <typeparam name="T">The type of records to find</typeparam>
+	/// <param name="store">The offline store to query</param>
+	/// <param name="terms">Search terms to match (OR operation)</param>
+	/// <returns>A queryable sequence of matching records</returns>
+	public static async Task<IQueryable<T>> FindManyQueryableAsync<T>(
+		this IOfflineStore store,
+		params string[] terms)
+	{
+		return await FindManyQueryableAsync<T>(store, CancellationToken.None, terms);
 	}
 
 	/// <summary>
@@ -84,6 +100,24 @@ public static class OfflineStoreExtensions
 	}
 
 	/// <summary>
+	/// Finds records matching the specified search terms and returns them as queryable.
+	/// This supports conditional predicate chaining before materialisation.
+	/// </summary>
+	/// <typeparam name="T">The type of records to find</typeparam>
+	/// <param name="store">The offline store to query</param>
+	/// <param name="cancellationToken">Optional token to cancel the operation</param>
+	/// <param name="terms">Search terms to match (OR operation)</param>
+	/// <returns>A queryable sequence of matching records</returns>
+	public static async Task<IQueryable<T>> FindManyQueryableAsync<T>(
+		this IOfflineStore store,
+		CancellationToken cancellationToken,
+		params string[] terms)
+	{
+		var results = await FindManyAsync<T>(store, cancellationToken, terms);
+		return results.AsQueryable();
+	}
+
+	/// <summary>
 	/// Applies an additional predicate filter to a record query.
 	/// This is syntactic sugar over RecordQuery's Where() for clearer intent in chained queries.
 	/// </summary>
@@ -125,6 +159,18 @@ public static class OfflineStoreExtensions
 	public static IEnumerable<T> WhereMatch<T>(
 		this IEnumerable<T> source,
 		Func<T, bool> predicate)
+		=> source.Where(predicate);
+
+	/// <summary>
+	/// Applies an additional predicate filter to a queryable collection.
+	/// </summary>
+	/// <typeparam name="T">The type of items in the queryable collection</typeparam>
+	/// <param name="source">The source queryable collection</param>
+	/// <param name="predicate">The filter predicate</param>
+	/// <returns>Filtered queryable collection</returns>
+	public static IQueryable<T> WhereMatch<T>(
+		this IQueryable<T> source,
+		Expression<Func<T, bool>> predicate)
 		=> source.Where(predicate);
 
 	/// <summary>

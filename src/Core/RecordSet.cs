@@ -226,6 +226,16 @@ public sealed class RecordSet<T> where T : class
 	}
 
 	/// <summary>
+	/// Gets all loaded records as queryable.
+	/// </summary>
+	/// <returns>Queryable records from the cache</returns>
+	public IQueryable<T> AsQueryable()
+	{
+		EnsureLoaded();
+		return (_cache?.Values ?? Enumerable.Empty<T>()).AsQueryable();
+	}
+
+	/// <summary>
 	/// Orders records by a key selector. Operates on cached data.
 	/// </summary>
 	/// <typeparam name="TKey">The type of the key</typeparam>

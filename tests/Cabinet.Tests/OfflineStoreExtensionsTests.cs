@@ -52,6 +52,29 @@ public class OfflineStoreExtensionsTests : IDisposable
 	}
 
 	[Fact]
+	public async Task FindManyQueryableAsync_ShouldReturnQueryableResults()
+	{
+		// Arrange
+		var crypto = new AesGcmEncryptionProvider(_testKey);
+		var mockIndexer = new MockIndexProvider();
+		var store = new FileOfflineStore(_testRootPath, crypto, mockIndexer);
+
+		await store.SaveAsync("id-1", new TestRecord { Name = "Seagulls at the beach", Value = 1 });
+		await store.SaveAsync("id-2", new TestRecord { Name = "Seagulls on the pier", Value = 20 });
+		await store.SaveAsync("id-3", new TestRecord { Name = "Dolphins swimming", Value = 30 });
+
+		// Act
+		var query = await store.FindManyQueryableAsync<TestRecord>("Seagulls");
+		var minValue = 10;
+		query = query.Where(r => r.Value >= minValue);
+		var results = query.ToList();
+
+		// Assert
+		Assert.Single(results);
+		Assert.Equal("Seagulls on the pier", results[0].Name);
+	}
+
+	[Fact]
 	public async Task WhereMatch_ShouldFilterResults()
 	{
 		// Arrange
@@ -95,6 +118,28 @@ public class OfflineStoreExtensionsTests : IDisposable
 		var resultList = results.ToList();
 		Assert.Single(resultList);
 		Assert.Contains("pier", resultList[0].Name);
+	}
+
+	[Fact]
+	public async Task WhereMatch_ForQueryable_ShouldFilterResults()
+	{
+		// Arrange
+		var crypto = new AesGcmEncryptionProvider(_testKey);
+		var mockIndexer = new MockIndexProvider();
+		var store = new FileOfflineStore(_testRootPath, crypto, mockIndexer);
+
+		await store.SaveAsync("id-1", new TestRecord { Name = "Seagulls", Value = 1 });
+		await store.SaveAsync("id-2", new TestRecord { Name = "Seagulls", Value = 10 });
+		await store.SaveAsync("id-3", new TestRecord { Name = "Seagulls", Value = 100 });
+
+		// Act
+		var query = await store.FindManyQueryableAsync<TestRecord>("Seagulls");
+		var results = query.WhereMatch(r => r.Value >= 10);
+
+		// Assert
+		var resultList = results.ToList();
+		Assert.Equal(2, resultList.Count);
+		Assert.All(resultList, r => Assert.True(r.Value >= 10));
 	}
 
 	[Fact]
