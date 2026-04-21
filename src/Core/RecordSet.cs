@@ -229,6 +229,9 @@ public sealed class RecordSet<T> where T : class
 	/// Gets all loaded records as queryable.
 	/// </summary>
 	/// <returns>Queryable records from the cache</returns>
+	/// <exception cref="InvalidOperationException">
+	/// Thrown when the record set has not been loaded. Call LoadAsync() or GetAllAsync() first.
+	/// </exception>
 	public IQueryable<T> AsQueryable()
 	{
 		EnsureLoaded();
