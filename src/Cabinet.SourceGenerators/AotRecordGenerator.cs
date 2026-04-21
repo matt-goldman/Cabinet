@@ -14,7 +14,7 @@ public class AotRecordGenerator : IIncrementalGenerator
 	private static readonly DiagnosticDescriptor MissingIdPropertyWarning = new(
 		id: "CAB001",
 		title: "AotRecord type is missing an ID property",
-		messageFormat: "Type '{0}' is decorated with [AotRecord] but has no resolvable ID property. Add an 'Id' or '{0}Id' property, or set IdPropertyName on the attribute.",
+		messageFormat: "Type '{0}' is decorated with [AotRecord] but has no resolvable ID property. Add an 'Id' or '{0}Id' property, or, if IdPropertyName is set on the attribute, ensure the named property exists on the type.",
 		category: "Cabinet.SourceGeneration",
 		defaultSeverity: DiagnosticSeverity.Warning,
 		isEnabledByDefault: true);
