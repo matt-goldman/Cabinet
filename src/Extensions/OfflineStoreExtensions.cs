@@ -38,6 +38,7 @@ public static class OfflineStoreExtensions
 	/// <summary>
 	/// Finds records matching the specified search terms and returns them as queryable.
 	/// This supports conditional predicate chaining before materialisation.
+	/// This API is additive so existing <see cref="IOfflineStore"/> implementations do not need to change.
 	/// </summary>
 	/// <typeparam name="T">The type of records to find</typeparam>
 	/// <param name="store">The offline store to query</param>
@@ -102,6 +103,7 @@ public static class OfflineStoreExtensions
 	/// <summary>
 	/// Finds records matching the specified search terms and returns them as queryable.
 	/// This supports conditional predicate chaining before materialisation.
+	/// This API is additive so existing <see cref="IOfflineStore"/> implementations do not need to change.
 	/// </summary>
 	/// <typeparam name="T">The type of records to find</typeparam>
 	/// <param name="store">The offline store to query</param>

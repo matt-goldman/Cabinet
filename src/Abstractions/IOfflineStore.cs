@@ -57,6 +57,10 @@ public interface IOfflineStore
     /// <summary>
     /// Searches for records matching the specified query string.
     /// </summary>
+    /// <remarks>
+    /// This method returns <see cref="IEnumerable{T}"/> for compatibility with existing store implementations.
+    /// For conditional query composition, use queryable extension methods on the returned data.
+    /// </remarks>
     /// <param name="query">The search query to match against indexed content</param>
     /// <param name="cancellationToken">Optional token to cancel the operation</param>
     /// <returns>An enumerable collection of search results with metadata</returns>
@@ -65,6 +69,10 @@ public interface IOfflineStore
     /// <summary>
     /// Searches for records matching the specified query string and returns typed results with data.
     /// </summary>
+    /// <remarks>
+    /// This method returns <see cref="IEnumerable{T}"/> for compatibility with existing store implementations.
+    /// For conditional query composition, use queryable extension methods on the returned data.
+    /// </remarks>
     /// <typeparam name="T">The type of data in the records</typeparam>
     /// <param name="query">The search query to match against indexed content</param>
     /// <param name="cancellationToken">Optional token to cancel the operation</param>
