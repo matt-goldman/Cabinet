@@ -129,10 +129,14 @@ public class AotRecordGenerator : IIncrementalGenerator
 		{
 			if (classInfo.IdPropertyName is null)
 			{
+				var typeDisplayName = string.IsNullOrWhiteSpace(classInfo.Namespace)
+					? classInfo.ClassName
+					: $"{classInfo.Namespace}.{classInfo.ClassName}";
+
 				context.ReportDiagnostic(Diagnostic.Create(
 					MissingIdPropertyWarning,
 					classInfo.Location,
-					classInfo.ClassName));
+					typeDisplayName));
 				continue;
 			}
 
