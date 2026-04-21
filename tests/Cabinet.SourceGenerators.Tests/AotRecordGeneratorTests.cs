@@ -118,6 +118,32 @@ namespace TestNamespace
 	}
 
 	[Fact]
+	public void ReportsWarningWhenAotRecordClassHasNoResolvableIdProperty()
+	{
+		// Arrange
+		string source = AttributeSource + @"
+namespace TestNamespace
+{
+	[Cabinet.AotRecord]
+	public class InvalidRecord
+	{
+		public string Name { get; set; } = string.Empty;
+	}
+}";
+
+		// Act
+		var (compilation, diagnostics) = CreateCompilation(source);
+
+		// Assert
+		Assert.Empty(diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error));
+		var warning = Assert.Single(diagnostics.Where(d => d.Id == "CAB001"));
+		Assert.Equal(DiagnosticSeverity.Warning, warning.Severity);
+
+		var allGeneratedCode = string.Join("\n", compilation.SyntaxTrees.Skip(1).Select(t => t.ToString()));
+		Assert.DoesNotContain("InvalidRecordExtensions", allGeneratedCode);
+	}
+
+	[Fact]
 	public void GeneratesCodeForMultipleRecordTypes()
 	{
 		// Arrange
@@ -356,6 +382,32 @@ namespace TestNamespace
 
 		var allGeneratedCode = string.Join("\n", compilation.SyntaxTrees.Skip(1).Select(t => t.ToString()));
 		Assert.Contains("record => record.CustomId.ToString()", allGeneratedCode);
+	}
+
+	[Fact]
+	public void ReportsWarningWhenAotRecordUsesMissingExplicitIdPropertyName()
+	{
+		// Arrange
+		string source = AttributeSource + @"
+namespace TestNamespace
+{
+	[Cabinet.AotRecord(IdPropertyName = ""MissingId"")]
+	public record InvalidRecord
+	{
+		public string Name { get; set; } = string.Empty;
+	}
+}";
+
+		// Act
+		var (compilation, diagnostics) = CreateCompilation(source);
+
+		// Assert
+		Assert.Empty(diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error));
+		var warning = Assert.Single(diagnostics.Where(d => d.Id == "CAB001"));
+		Assert.Equal(DiagnosticSeverity.Warning, warning.Severity);
+
+		var allGeneratedCode = string.Join("\n", compilation.SyntaxTrees.Skip(1).Select(t => t.ToString()));
+		Assert.DoesNotContain("InvalidRecordExtensions", allGeneratedCode);
 	}
 
 	[Fact]
