@@ -140,12 +140,12 @@ public class AotRecordGenerator : IIncrementalGenerator
 			context.AddSource($"{classInfo.ClassName}Extensions.g.cs", SourceText.From(extensionSource, Encoding.UTF8));
 		}
 
-		allClasses = allClasses.Where(c => c.IdPropertyName is not null).ToList();
-		if (allClasses.Count == 0)
+		var validClasses = allClasses.Where(c => c.IdPropertyName is not null).ToList();
+		if (validClasses.Count == 0)
 			return;
 
 		// Generate store helper extensions
-		var storeExtensionsSource = GenerateStoreExtensions(allClasses);
+		var storeExtensionsSource = GenerateStoreExtensions(validClasses);
 		context.AddSource("CabinetStoreExtensions.g.cs", SourceText.From(storeExtensionsSource, Encoding.UTF8));
 	}
 
