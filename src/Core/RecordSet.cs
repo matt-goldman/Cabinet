@@ -230,12 +230,19 @@ public sealed class RecordSet<T> where T : class
 	/// </summary>
 	/// <returns>Queryable records from the cache</returns>
 	/// <exception cref="InvalidOperationException">
-	/// Thrown when the record set has not been loaded. Call LoadAsync() or GetAllAsync() first.
+	/// Thrown when the record set has not been loaded, or when caching is disabled and no in-memory cache is available.
+	/// Call LoadAsync() or GetAllAsync() first, and ensure caching is enabled.
 	/// </exception>
 	public IQueryable<T> AsQueryable()
 	{
 		EnsureLoaded();
-		return (_cache?.Values ?? Enumerable.Empty<T>()).AsQueryable();
+		if (_cache == null)
+		{
+			throw new InvalidOperationException(
+				$"Queryable access for RecordSet<{typeof(T).Name}> requires an in-memory cache. Ensure caching is enabled before calling AsQueryable().");
+		}
+
+		return _cache.Values.AsQueryable();
 	}
 
 	/// <summary>

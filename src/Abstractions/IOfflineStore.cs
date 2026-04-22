@@ -59,7 +59,8 @@ public interface IOfflineStore
     /// </summary>
     /// <remarks>
     /// This method returns <see cref="IEnumerable{T}"/> for compatibility with existing store implementations.
-    /// For conditional query composition, use queryable extension methods on the returned data.
+    /// The store query is executed before results are returned, so additional LINQ operations apply in memory
+    /// and are not translated back to the underlying store or index.
     /// </remarks>
     /// <param name="query">The search query to match against indexed content</param>
     /// <param name="cancellationToken">Optional token to cancel the operation</param>
@@ -71,7 +72,8 @@ public interface IOfflineStore
     /// </summary>
     /// <remarks>
     /// This method returns <see cref="IEnumerable{T}"/> for compatibility with existing store implementations.
-    /// For conditional query composition, use queryable extension methods on the returned data.
+    /// The store query is executed before results are returned, so additional LINQ operations apply in memory
+    /// and are not translated back to the underlying store or index.
     /// </remarks>
     /// <typeparam name="T">The type of data in the records</typeparam>
     /// <param name="query">The search query to match against indexed content</param>

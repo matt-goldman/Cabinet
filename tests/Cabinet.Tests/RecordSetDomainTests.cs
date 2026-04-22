@@ -262,6 +262,34 @@ public class RecordSetDomainTests : IDisposable
 	}
 
 	[Fact]
+	public async Task AsQueryable_WithCachingDisabled_ShouldThrowInvalidOperationException()
+	{
+		// Arrange
+		var sharedFileName = "AsQueryableCachingDisabledTest";
+		var cachedOptions = new RecordSetOptions<TestRecord>
+		{
+			IdSelector = r => r.Id,
+			CustomFileName = sharedFileName
+		};
+		var uncachedOptions = new RecordSetOptions<TestRecord>
+		{
+			IdSelector = r => r.Id,
+			CustomFileName = sharedFileName,
+			EnableCaching = false
+		};
+		var cachedRecordSet = new RecordSet<TestRecord>(_store, cachedOptions);
+		var uncachedRecordSet = new RecordSet<TestRecord>(_store, uncachedOptions);
+
+		await cachedRecordSet.LoadAsync();
+		await cachedRecordSet.AddAsync(new TestRecord { Id = "1", Name = "Alice", Value = 10 });
+
+		await uncachedRecordSet.LoadAsync();
+
+		// Act / Assert
+		Assert.Throws<InvalidOperationException>(() => uncachedRecordSet.AsQueryable());
+	}
+
+	[Fact]
 	public async Task OrderBy_ShouldSortRecords()
 	{
 		// Arrange

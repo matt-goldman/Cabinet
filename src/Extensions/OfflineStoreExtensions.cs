@@ -36,14 +36,16 @@ public static class OfflineStoreExtensions
 	}
 
 	/// <summary>
-	/// Finds records matching the specified search terms and returns them as queryable.
-	/// This supports conditional predicate chaining before materialisation.
+	/// Finds records matching the specified search terms and returns an in-memory <see cref="IQueryable{T}"/>
+	/// over the already-loaded results.
+	/// The store query is executed before this method returns, so additional LINQ operators are applied
+	/// in memory and are not translated to the underlying store.
 	/// This API is additive so existing <see cref="IOfflineStore"/> implementations do not need to change.
 	/// </summary>
 	/// <typeparam name="T">The type of records to find</typeparam>
 	/// <param name="store">The offline store to query</param>
 	/// <param name="terms">Search terms to match (OR operation)</param>
-	/// <returns>A queryable sequence of matching records</returns>
+	/// <returns>An in-memory <see cref="IQueryable{T}"/> of matching records</returns>
 	public static async Task<IQueryable<T>> FindManyQueryableAsync<T>(
 		this IOfflineStore store,
 		params string[] terms)
@@ -101,15 +103,17 @@ public static class OfflineStoreExtensions
 	}
 
 	/// <summary>
-	/// Finds records matching the specified search terms and returns them as queryable.
-	/// This supports conditional predicate chaining before materialisation.
+	/// Finds records matching the specified search terms and returns an in-memory <see cref="IQueryable{T}"/>
+	/// over the already-loaded results.
+	/// The store query is executed before this method returns, so additional LINQ operators are applied
+	/// in memory and are not translated to the underlying store.
 	/// This API is additive so existing <see cref="IOfflineStore"/> implementations do not need to change.
 	/// </summary>
 	/// <typeparam name="T">The type of records to find</typeparam>
 	/// <param name="store">The offline store to query</param>
 	/// <param name="cancellationToken">Optional token to cancel the operation</param>
 	/// <param name="terms">Search terms to match (OR operation)</param>
-	/// <returns>A queryable sequence of matching records</returns>
+	/// <returns>An in-memory <see cref="IQueryable{T}"/> of matching records</returns>
 	public static async Task<IQueryable<T>> FindManyQueryableAsync<T>(
 		this IOfflineStore store,
 		CancellationToken cancellationToken,
