@@ -21,6 +21,23 @@ namespace Cabinet
 }
 ";
 
+	private const string FileAttachmentStub = @"
+using System.IO;
+
+namespace Cabinet.Core
+{
+	public sealed class FileAttachment
+	{
+		public FileAttachment(string logicalName, string contentType, Stream content) { }
+		public string LogicalName { get; } = string.Empty;
+		public string ContentType { get; } = string.Empty;
+		public Stream Content { get; } = Stream.Null;
+	}
+
+	public sealed record AttachmentInfo(string Name, string ContentType, long Length);
+}
+";
+
 	[Fact]
 	public void GeneratesCodeForClassWithIdProperty()
 	{
@@ -505,6 +522,89 @@ namespace TestNamespace
 
 		// Extension class should be internal
 		Assert.Contains("internal static class InternalRecordExtensions", allGeneratedCode);
+	}
+
+	[Theory]
+	[InlineData("public Cabinet.Core.FileAttachment? Photo { get; set; }", "Photo")]
+	[InlineData("public System.Collections.Generic.List<Cabinet.Core.FileAttachment>? Files { get; set; }", "Files")]
+	[InlineData("public Cabinet.Core.FileAttachment[]? Files { get; set; }", "Files")]
+	[InlineData("public System.IO.Stream? Content { get; set; }", "Content")]
+	[InlineData("public System.IO.MemoryStream? Content { get; set; }", "Content")]
+	public void ReportsWarningForStreamBackedProperty(string property, string expectedPropertyName)
+	{
+		// Arrange
+		string source = AttributeSource + FileAttachmentStub + @"
+namespace TestNamespace
+{
+	[Cabinet.AotRecord]
+	public class RecordWithAttachment
+	{
+		public string Id { get; set; } = string.Empty;
+		" + property + @"
+	}
+}";
+
+		// Act
+		var (_, diagnostics) = CreateCompilation(source);
+
+		// Assert
+		Assert.Empty(diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error));
+
+		var warning = Assert.Single(diagnostics.Where(d => d.Id == "CAB002"));
+		Assert.Equal(DiagnosticSeverity.Warning, warning.Severity);
+		Assert.Contains(expectedPropertyName, warning.GetMessage());
+		Assert.Contains("AttachmentInfo", warning.GetMessage());
+	}
+
+	[Fact]
+	public void DoesNotReportWarningForAttachmentInfoProperty()
+	{
+		// Arrange - the supported pattern must stay quiet
+		string source = AttributeSource + FileAttachmentStub + @"
+namespace TestNamespace
+{
+	[Cabinet.AotRecord]
+	public class RecordWithInfo
+	{
+		public string Id { get; set; } = string.Empty;
+		public System.Collections.Generic.List<Cabinet.Core.AttachmentInfo> Attachments { get; set; } = new();
+	}
+}";
+
+		// Act
+		var (compilation, diagnostics) = CreateCompilation(source);
+
+		// Assert
+		Assert.Empty(diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error));
+		Assert.Empty(diagnostics.Where(d => d.Id == "CAB002"));
+
+		var allGeneratedCode = string.Join("\n", compilation.SyntaxTrees.Skip(1).Select(t => t.ToString()));
+		Assert.Contains("RecordWithInfoExtensions", allGeneratedCode);
+	}
+
+	[Fact]
+	public void StillGeneratesExtensionsForTypeWithStreamBackedProperty()
+	{
+		// Arrange - CAB002 is advisory; it must not suppress code generation
+		string source = AttributeSource + FileAttachmentStub + @"
+namespace TestNamespace
+{
+	[Cabinet.AotRecord]
+	public class RecordWithAttachment
+	{
+		public string Id { get; set; } = string.Empty;
+		public Cabinet.Core.FileAttachment? Photo { get; set; }
+	}
+}";
+
+		// Act
+		var (compilation, diagnostics) = CreateCompilation(source);
+
+		// Assert
+		Assert.Single(diagnostics.Where(d => d.Id == "CAB002"));
+
+		var allGeneratedCode = string.Join("\n", compilation.SyntaxTrees.Skip(1).Select(t => t.ToString()));
+		Assert.Contains("RecordWithAttachmentExtensions", allGeneratedCode);
 	}
 
 	private (Compilation, ImmutableArray<Diagnostic>) CreateCompilation(string source)

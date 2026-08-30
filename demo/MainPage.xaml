@@ -2,6 +2,7 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:demo.ViewModels"
+             xmlns:model="clr-namespace:demo.Models"
              x:DataType="vm:MainViewModel"
              x:Class="demo.MainPage">
 
@@ -79,7 +80,7 @@
                          IsEnabled="{Binding IsBusy, Converter={StaticResource InvertedBoolConverter}}" />
                 </Grid>
 
-                <Grid RowDefinitions="Auto,Auto,Auto"
+                <Grid RowDefinitions="Auto,Auto,Auto,300"
                       RowSpacing="20"
                       ColumnSpacing="10"
                       MinimumWidthRequest="300"
@@ -105,6 +106,30 @@
                         Grid.Row="2"
                         VerticalOptions="End"
                         IsEnabled="{Binding IsBusy, Converter={StaticResource InvertedBoolConverter}}" />
+                    
+                    <CollectionView Grid.Row="3"
+                                    ItemsSource="{Binding SearchResults}"
+                                    SelectionMode="Single"
+                                    SelectionChangedCommand="{Binding ViewRecordCommand}"
+                                    SelectedItem="{Binding SelectedRecord}">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <VerticalStackLayout x:DataType="model:SearchResultWithData">
+                                    <HorizontalStackLayout>
+                                        <Label FontAttributes="Bold"
+                                               FontFamily="OpenSansSemibold"
+                                               Text="{Binding RecordType}"/>
+                                        <Label FontAttributes="Bold"
+                                               FontFamily="OpenSansSemibold"
+                                               Text="{Binding Title}"/>
+                                    </HorizontalStackLayout>
+                                    <Label FontAttributes="Bold"
+                                           FontFamily="OpenSansSemibold"
+                                           Text="{Binding Details}"/>
+                                </VerticalStackLayout>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
                 </Grid>
 
                 <Grid RowDefinitions="Auto,Auto,Auto"

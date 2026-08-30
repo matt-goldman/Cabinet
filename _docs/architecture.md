@@ -19,6 +19,10 @@ It coordinates encryption, persistence, and index updates.
 public interface IOfflineStore
 {
     Task SaveAsync<T>(string id, T data, IEnumerable<FileAttachment>? attachments = null);
+    Task<AttachmentInfo> SaveAttachmentAsync(string id, FileAttachment attachment);
+    Task<Stream?> OpenAttachmentAsync(string id, string name);
+    Task<IReadOnlyList<AttachmentInfo>> ListAttachmentsAsync(string id);
+    Task<bool> DeleteAttachmentAsync(string id, string name);
     Task<T?> LoadAsync<T>(string id);
     Task DeleteAsync(string id);
     Task<IEnumerable<SearchResult>> FindAsync(string query);
@@ -69,7 +73,9 @@ Search is O(1) for token lookup and O(n) for result assembly, with typical respo
  │    ├── {id}.dat        # Encrypted JSON
  │    ├── {id}.meta       # Encrypted metadata
  ├── attachments/
- │    ├── {id}-{filename}.bin
+ │    └── {hash(id)}/
+ │         ├── manifest.dat    # Encrypted attachment metadata
+ │         └── {hash(name)}.bin
  ├── index/
  │    └── search.idx      # Encrypted inverted index
  └── summary/

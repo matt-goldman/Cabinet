@@ -139,7 +139,7 @@ public class FileOfflineStoreTests : IDisposable
 	}
 
 	[Fact]
-	public async Task SaveAsync_WithAttachments_ShouldSaveAttachmentFiles()
+	public async Task SaveAsync_WithAttachments_ShouldRoundTripContent()
 	{
 		// Arrange
 		var crypto = new AesGcmEncryptionProvider(_testKey);
@@ -153,13 +153,38 @@ public class FileOfflineStoreTests : IDisposable
 		// Act
 		await store.SaveAsync("test-id", testData, new[] { attachment });
 
-		// Assert
-		var attachmentPath = Path.Combine(_testRootPath, "attachments", "test-id-test.bin.bin");
-		Assert.True(File.Exists(attachmentPath));
+		// Assert - the content comes back through the library, byte for byte
+		await using var content = await store.OpenAttachmentAsync("test-id", "test.bin");
+		Assert.NotNull(content);
 
-		// Verify attachment is encrypted
-		var attachmentBytes = await File.ReadAllBytesAsync(attachmentPath);
-		Assert.NotEqual(attachmentContent, attachmentBytes);
+		using var buffer = new MemoryStream();
+		await content.CopyToAsync(buffer);
+		Assert.Equal(attachmentContent, buffer.ToArray());
+	}
+
+	[Fact]
+	public async Task SaveAsync_WithAttachments_ShouldEncryptContentOnDisk()
+	{
+		// Arrange
+		var crypto = new AesGcmEncryptionProvider(_testKey);
+		var store = new FileOfflineStore(_testRootPath, crypto);
+		var testData = new TestRecord { Name = "Test", Value = 42 };
+
+		var attachmentContent = new byte[] { 1, 2, 3, 4, 5 };
+		var attachment = new FileAttachment("test.bin", "application/octet-stream", attachmentContent);
+
+		// Act
+		await store.SaveAsync("test-id", testData, new[] { attachment });
+
+		// Assert - no plaintext anywhere under the attachments directory
+		var files = Directory.GetFiles(Path.Combine(_testRootPath, "attachments"), "*", SearchOption.AllDirectories);
+		Assert.NotEmpty(files);
+
+		foreach (var file in files)
+		{
+			var bytes = await File.ReadAllBytesAsync(file);
+			Assert.False(ContainsSequence(bytes, attachmentContent), $"Plaintext content found in {file}.");
+		}
 	}
 
 	[Fact]
@@ -178,8 +203,8 @@ public class FileOfflineStoreTests : IDisposable
 		await store.DeleteAsync("test-id");
 
 		// Assert
-		var attachmentPath = Path.Combine(_testRootPath, "attachments", "test-id-test.bin.bin");
-		Assert.False(File.Exists(attachmentPath));
+		Assert.Null(await store.OpenAttachmentAsync("test-id", "test.bin"));
+		Assert.Empty(await store.ListAttachmentsAsync("test-id"));
 	}
 
 	[Fact]
@@ -198,13 +223,19 @@ public class FileOfflineStoreTests : IDisposable
 		await store.SaveAsync("test-id", testData, new[] { attachment1, attachment2, attachment3 });
 
 		// Assert
-		var attachmentPath1 = Path.Combine(_testRootPath, "attachments", "test-id-file1.bin.bin");
-		var attachmentPath2 = Path.Combine(_testRootPath, "attachments", "test-id-file2.bin.bin");
-		var attachmentPath3 = Path.Combine(_testRootPath, "attachments", "test-id-file3.bin.bin");
+		var listed = await store.ListAttachmentsAsync("test-id");
+		Assert.Equal(3, listed.Count);
+		Assert.Equal(["file1.bin", "file2.bin", "file3.bin"], listed.Select(a => a.Name).Order());
 
-		Assert.True(File.Exists(attachmentPath1));
-		Assert.True(File.Exists(attachmentPath2));
-		Assert.True(File.Exists(attachmentPath3));
+		foreach (var (name, expected) in new[] { ("file1.bin", (byte)1), ("file2.bin", (byte)2), ("file3.bin", (byte)3) })
+		{
+			await using var content = await store.OpenAttachmentAsync("test-id", name);
+			Assert.NotNull(content);
+
+			using var buffer = new MemoryStream();
+			await content.CopyToAsync(buffer);
+			Assert.Equal([expected], buffer.ToArray());
+		}
 	}
 
 	[Fact]
@@ -256,6 +287,18 @@ public class FileOfflineStoreTests : IDisposable
 		Assert.Equal(testData.Metadata, loaded.Metadata);
 		Assert.Equal(testData.Nested.Description, loaded.Nested.Description);
 		Assert.Equal(testData.Nested.Count, loaded.Nested.Count);
+	}
+
+	private static bool ContainsSequence(byte[] haystack, byte[] needle)
+	{
+		if (needle.Length == 0 || haystack.Length < needle.Length) return false;
+
+		for (var i = 0; i <= haystack.Length - needle.Length; i++)
+		{
+			if (haystack.AsSpan(i, needle.Length).SequenceEqual(needle)) return true;
+		}
+
+		return false;
 	}
 
 	// Test data models

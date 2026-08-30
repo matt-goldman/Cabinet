@@ -6,16 +6,74 @@ on:
     paths:
       - 'src/**'
   workflow_dispatch:
+    inputs:
+      bump:
+        description: 'Semantic version part to bump'
+        type: choice
+        required: false
+        default: 'patch'
+        options:
+          - patch
+          - minor
+          - major
 
 jobs:
-  
+
   generate-version:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      pull-requests: read
 
     steps:
       - uses: actions/checkout@v4
+
+      # Decide which part of the version to bump. A manual run uses the dispatch input; a push to
+      # main takes it from the merged PR's labels, defaulting to patch when none is present.
+      - name: Resolve version bump
+        id: resolve_bump
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DISPATCH_BUMP: ${{ inputs.bump }}
+        run: |
+          set -euo pipefail
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            bump="${DISPATCH_BUMP:-patch}"
+            echo "Manual run: bumping '$bump'."
+            echo "bump=$bump" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          pulls=$(gh api "repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}/pulls" --jq '.[].number' 2>/dev/null || true)
+
+          # A commit can belong to more than one PR; take the labels from all of them so a
+          # deliberate bump label is never silently ignored.
+          labels=$(gh api "repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}/pulls" \
+            --jq '.[].labels[].name' 2>/dev/null | { grep -E '^bump_(major|minor|patch)$' || true; } | sort -u)
+
+          count=$(printf '%s' "$labels" | { grep -c . || true; })
+
+          if [ "$count" -gt 1 ]; then
+            echo "::error::Conflicting version bump labels on the pull request: $(echo "$labels" | paste -sd', ' -). Apply exactly one of bump_major, bump_minor or bump_patch."
+            exit 1
+          fi
+
+          if [ "$count" -eq 1 ]; then
+            bump="${labels#bump_}"
+            echo "Pull request is labelled '$labels': bumping '$bump'."
+          elif [ -z "$pulls" ]; then
+            # No PR could be associated with this commit, so no label could have been read even if
+            # one was applied. Distinguished from "found a PR with no label" because defaulting to
+            # patch on an intended major is not recoverable once the tag is pushed.
+            bump="patch"
+            echo "::warning::No pull request is associated with ${GITHUB_SHA}, so no bump label could be read. Defaulting to '$bump'. If this was meant to be a minor or major release, delete the tag and re-run this workflow manually with the correct bump."
+          else
+            bump="patch"
+            echo "No bump label on the pull request: defaulting to '$bump'."
+          fi
+
+          echo "bump=$bump" >> "$GITHUB_OUTPUT"
 
       - name: GitHub Tag Bump
         id: tag_bump
@@ -23,7 +81,13 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           INITIAL_VERSION: 1.0.0
-          DEFAULT_BUMP: 'patch'
+          # Note: a #major / #minor / #patch / #none keyword in the commit message still takes
+          # precedence over this, which is the action's own behaviour.
+          DEFAULT_BUMP: ${{ steps.resolve_bump.outputs.bump }}
+
+      - name: Summarise
+        run: |
+          echo "Bumped **${{ steps.resolve_bump.outputs.bump }}** to \`${{ steps.tag_bump.outputs.new_tag }}\`." >> "$GITHUB_STEP_SUMMARY"
 
     outputs:
       new_version: ${{ steps.tag_bump.outputs.new_tag }}
@@ -38,7 +102,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 9.0.x
+          dotnet-version: 10.0.x
 
       - name: Build
         run: |
@@ -52,9 +116,16 @@ jobs:
             -p:PackageVersion=${{ needs.generate-version.outputs.new_version }} \
             -o packages
 
+      # Get a short-lived NuGet API key
+      - name: NuGet login (OIDC → temp API key)
+        uses: NuGet/login@v1
+        id: login
+        with:
+          user: matt-goldman
+
       - name: Push to NuGet
         run: |
           dotnet nuget push packages/*.nupkg \
-            --api-key ${{ secrets.NUGET_API_KEY }} \
+            --api-key ${{steps.login.outputs.NUGET_API_KEY}} \
             --source https://api.nuget.org/v3/index.json \
             --skip-duplicate

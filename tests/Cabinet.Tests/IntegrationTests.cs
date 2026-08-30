@@ -87,21 +87,37 @@ public class IntegrationTests : IDisposable
 		// Act - Save with attachment
 		await store.SaveAsync("photo-lesson-1", lessonRecord, new[] { photoAttachment });
 
-		// Assert - Verify record and attachment saved
+		// Assert - Verify record saved and attachment is listed with its metadata intact
 		Assert.True(File.Exists(Path.Combine(_testRootPath, "records", "photo-lesson-1.dat")));
-		Assert.True(File.Exists(Path.Combine(_testRootPath, "attachments", "photo-lesson-1-beach-photo.jpg.bin")));
+
+		var listed = await store.ListAttachmentsAsync("photo-lesson-1");
+		var info = Assert.Single(listed);
+		Assert.Equal("beach-photo.jpg", info.Name);
+		Assert.Equal("image/jpeg", info.ContentType);
+		Assert.Equal(photoBytes.Length, info.Length);
 
 		// Act - Load record
 		var loaded = await store.LoadAsync<LessonRecord>("photo-lesson-1");
 		Assert.NotNull(loaded);
 		Assert.Equal("Photography", loaded.Subject);
 
+		// Act - Read the attachment back
+		await using (var content = await store.OpenAttachmentAsync("photo-lesson-1", "beach-photo.jpg"))
+		{
+			Assert.NotNull(content);
+
+			using var buffer = new MemoryStream();
+			await content.CopyToAsync(buffer);
+			Assert.Equal(photoBytes, buffer.ToArray());
+		}
+
 		// Act - Delete
 		await store.DeleteAsync("photo-lesson-1");
 
 		// Assert - Both record and attachment deleted
 		Assert.False(File.Exists(Path.Combine(_testRootPath, "records", "photo-lesson-1.dat")));
-		Assert.False(File.Exists(Path.Combine(_testRootPath, "attachments", "photo-lesson-1-beach-photo.jpg.bin")));
+		Assert.Null(await store.OpenAttachmentAsync("photo-lesson-1", "beach-photo.jpg"));
+		Assert.Empty(await store.ListAttachmentsAsync("photo-lesson-1"));
 	}
 
 	[Fact]

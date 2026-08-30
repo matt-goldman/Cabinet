@@ -19,6 +19,14 @@ public class AotRecordGenerator : IIncrementalGenerator
 		defaultSeverity: DiagnosticSeverity.Warning,
 		isEnabledByDefault: true);
 
+	private static readonly DiagnosticDescriptor UnserialisablePropertyWarning = new(
+		id: "CAB002",
+		title: "AotRecord type has a property that cannot be serialised",
+		messageFormat: "Type '{0}' is decorated with [AotRecord] but has stream-backed properties ({1}) that cannot be serialised. Use Cabinet.Core.AttachmentInfo on the model to carry the attachment's name, content type and length, pass a FileAttachment to IOfflineStore.SaveAsync or SaveAttachmentAsync to store the bytes, and call IOfflineStore.OpenAttachmentAsync to read them back.",
+		category: "Cabinet.SourceGeneration",
+		defaultSeverity: DiagnosticSeverity.Warning,
+		isEnabledByDefault: true);
+
 	public void Initialize(IncrementalGeneratorInitializationContext context)
 	{
 		// Find all classes and records with [AotRecord] attribute
@@ -80,6 +88,11 @@ public class AotRecordGenerator : IIncrementalGenerator
 			_ => "internal" // Default to internal for safety
 		};
 
+		// Properties that hold a live stream cannot survive JSON in either direction. Kept as a
+		// joined string rather than a collection so ClassInfo stays value-equatable for the
+		// incremental pipeline.
+		var unserialisableProperties = string.Join(", ", FindUnserialisableProperties(symbol));
+
 		return new ClassInfo(
 			symbol.Name,
 			symbol.ContainingNamespace.ToDisplayString(),
@@ -87,7 +100,8 @@ public class AotRecordGenerator : IIncrementalGenerator
 			fileName ?? symbol.Name,
 			accessibility,
 			isPublic,
-			symbol.Locations.FirstOrDefault());
+			symbol.Locations.FirstOrDefault(),
+			unserialisableProperties.Length == 0 ? null : unserialisableProperties);
 	}
 
 	private static IPropertySymbol? FindIdProperty(INamedTypeSymbol classSymbol, string? explicitName)
@@ -127,16 +141,25 @@ public class AotRecordGenerator : IIncrementalGenerator
 		// Generate RecordSet extensions for each class
 		foreach (var classInfo in allClasses)
 		{
+			var displayName = string.IsNullOrWhiteSpace(classInfo.Namespace)
+				? classInfo.ClassName
+				: $"{classInfo.Namespace}.{classInfo.ClassName}";
+
+			if (classInfo.UnserialisableProperties is not null)
+			{
+				context.ReportDiagnostic(Diagnostic.Create(
+					UnserialisablePropertyWarning,
+					classInfo.Location,
+					displayName,
+					classInfo.UnserialisableProperties));
+			}
+
 			if (classInfo.IdPropertyName is null)
 			{
-				var typeDisplayName = string.IsNullOrWhiteSpace(classInfo.Namespace)
-					? classInfo.ClassName
-					: $"{classInfo.Namespace}.{classInfo.ClassName}";
-
 				context.ReportDiagnostic(Diagnostic.Create(
 					MissingIdPropertyWarning,
 					classInfo.Location,
-					typeDisplayName));
+					displayName));
 				continue;
 			}
 
@@ -244,6 +267,50 @@ public class AotRecordGenerator : IIncrementalGenerator
 		return sb.ToString();
 	}
 
+	/// <summary>
+	/// Finds public properties whose type is a stream, or wraps one, and so cannot be serialised.
+	/// Collection and array element types are unwrapped, so List&lt;FileAttachment&gt; is caught too.
+	/// </summary>
+	private static IEnumerable<string> FindUnserialisableProperties(INamedTypeSymbol classSymbol)
+	{
+		foreach (var property in classSymbol.GetMembers().OfType<IPropertySymbol>())
+		{
+			if (property.DeclaredAccessibility != Accessibility.Public || property.IsStatic)
+				continue;
+
+			if (IsStreamBacked(property.Type))
+				yield return property.Name;
+		}
+	}
+
+	private static bool IsStreamBacked(ITypeSymbol type)
+	{
+		if (type is IArrayTypeSymbol array)
+			return IsStreamBacked(array.ElementType);
+
+		if (DisplayName(type) == "Cabinet.Core.FileAttachment")
+			return true;
+
+		for (var baseType = type; baseType is not null; baseType = baseType.BaseType)
+		{
+			if (DisplayName(baseType) == "System.IO.Stream")
+				return true;
+		}
+
+		// Unwrap collections (and Nullable<T>) so element types are inspected as well.
+		if (type is INamedTypeSymbol named && named.TypeArguments.Length > 0)
+			return named.TypeArguments.Any(IsStreamBacked);
+
+		return false;
+	}
+
+	/// <summary>
+	/// The type's display name without its nullable annotation, so that <c>Stream?</c> and
+	/// <c>Stream</c> compare equal.
+	/// </summary>
+	private static string DisplayName(ITypeSymbol type)
+		=> type.WithNullableAnnotation(NullableAnnotation.None).ToDisplayString();
+
 	private record ClassInfo(
 		string ClassName,
 		string Namespace,
@@ -251,5 +318,6 @@ public class AotRecordGenerator : IIncrementalGenerator
 		string FileName,
 		string Accessibility,
 		bool IsPublic,
-		Location? Location);
+		Location? Location,
+		string? UnserialisableProperties);
 }

@@ -1,6 +1,9 @@
-﻿using System.Text;
+﻿using System.Collections.ObjectModel;
+using System.Text;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using demo.Models;
+using demo.Pages;
 using demo.Services;
 
 namespace demo.ViewModels;
@@ -27,6 +30,11 @@ public partial class MainViewModel(OfflineDataService dataService) : ObservableO
 
 	[ObservableProperty]
 	public partial int StudentCount { get; set; }
+	
+	public ObservableCollection<SearchResultWithData> SearchResults { get; set; } = [];
+	
+	[ObservableProperty]
+	public partial SearchResultWithData? SelectedRecord { get; set; }
 
 	[RelayCommand]
 	private async Task GenerateRecords()
@@ -67,6 +75,8 @@ public partial class MainViewModel(OfflineDataService dataService) : ObservableO
 	private async Task SearchRecords()
 	{
 		if (IsBusy) return;
+		
+		SearchResults.Clear();
 
 		if (string.IsNullOrWhiteSpace(SearchTerm))
 		{
@@ -87,22 +97,11 @@ public partial class MainViewModel(OfflineDataService dataService) : ObservableO
 			}
 			else
 			{
-				var resultBuilder = new StringBuilder();
-				resultBuilder.Append($"🔍 Found {count} result(s) in {duration.TotalMilliseconds:F2}ms\n");
-				resultBuilder.Append($"Searched across both LessonRecord and StudentRecord types\n\n");
-				
-				foreach (var result in results.Take(10))
+				Results = $"🔍 Found {count} result(s) in {duration.TotalMilliseconds:F2}ms";
+				foreach (var result in results)
 				{
-					resultBuilder.Append($"📝 [{result.RecordType}] {result.Title}\n");
-					resultBuilder.Append($"   {result.Details}\n\n");
+					SearchResults.Add(result);
 				}
-
-				if (count > 10)
-				{
-					resultBuilder.Append($"... and {count - 10} more");
-				}
-
-				Results = resultBuilder.ToString();
 			}
 		}
 		catch (Exception ex)
@@ -141,6 +140,23 @@ public partial class MainViewModel(OfflineDataService dataService) : ObservableO
 		finally
 		{
 			IsBusy = false;
+		}
+	}
+
+	[RelayCommand]
+	public async Task ViewRecord()
+	{
+		if (SelectedRecord is null) return; 
+		
+		if (SelectedRecord.RecordType == "Student")
+		{
+			var student = await dataService.OpenStudentRecordAsync(SelectedRecord.Id);
+			await Application.Current!.Windows[0].Page!.Navigation.PushModalAsync(new ResultPage(dataService, null, student));
+		}
+		else if (SelectedRecord.RecordType == "Lesson")// && Guid.TryParse(SelectedRecord.Id, out var id))
+		{
+			var lesson = await dataService.OpenLessonRecordAsync(SelectedRecord.Id);
+			await Application.Current!.Windows[0].Page!.Navigation.PushModalAsync(new ResultPage(dataService, lesson, null));
 		}
 	}
 

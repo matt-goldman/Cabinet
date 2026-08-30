@@ -316,23 +316,35 @@ foreach (var result in results)
 
 ### 4. Lazy-Load Attachments
 
+Attachment bytes are stored as separate encrypted files and are never loaded, decrypted, or
+serialised as part of the record. Keep the metadata on the record and fetch the content only at the
+point you need it.
+
 **Bad:**
 ```csharp
-// Saves all attachments immediately
-await store.SaveAsync(id, record, allPhotos);
+// Base64 in the record: the bytes are decrypted and parsed on every load of this record,
+// and cost roughly 33% extra on every write.
+record.PhotoBase64 = Convert.ToBase64String(photoBytes);
+await store.SaveAsync(id, record);
 ```
 
 **Good:**
 ```csharp
-// Save record without attachments
+// The record carries metadata only
+var info = await store.SaveAttachmentAsync(id, new FileAttachment("photo.jpg", "image/jpeg", photoStream));
+record.Attachments = [info];
 await store.SaveAsync(id, record);
 
-// Save attachments on demand
+// Content is decrypted only when it is actually wanted
 if (userWantsToViewPhotos)
 {
-    await store.SaveAsync(id, record, photos);
+    await using var photo = await store.OpenAttachmentAsync(id, "photo.jpg");
 }
 ```
+
+Note that attachment content is currently buffered in memory during a save and a read; a fully
+streaming path would require the `IEncryptionProvider` contract to work in chunks. Be mindful of
+this with very large attachments.
 
 ## Why It Scales
 

@@ -1,5 +1,7 @@
 # Cabinet
 
+> ⚠️ **IMPORTANT:** If you're upgrading from v1.x.x to v2.x.x there are breaking changes. These may not affect you but please check the migration guide if you experience any problems.
+
 **Fun fact:** The original issue in my app that prompted me to build this turned out to be nothing to do with my data storage. Fixed a startup deadlock and everything worked, with LiteDB. So...I guess I learned something...?
 
 ![NuGet Version](https://img.shields.io/nuget/v/Cabinet?style=for-the-badge)
@@ -127,7 +129,24 @@ var recentLessons = lessons.OrderByDescending(l => l.Date).Take(10);
 
 // Search using encrypted index
 var results = await lessons.FindAsync("seagulls");
+
+// Attach a file - bytes are stored as a separate encrypted file, keyed on the record's ID.
+// Keep the returned metadata on the record; the content is read back only when you ask for it.
+await using var photo = File.OpenRead("seagull.jpg");
+lesson.Attachments = [await lessons.AddAttachmentAsync(lesson.LessonId, new FileAttachment("seagull.jpg", "image/jpeg", photo))];
+await lessons.UpdateAsync(lesson.LessonId, lesson);
+
+await using var content = await lessons.OpenAttachmentAsync(lesson.LessonId, "seagull.jpg");
+
+// Removing the record removes its attachments too
+await lessons.RemoveAsync(lesson.LessonId);
 ```
+
+> Put `AttachmentInfo` on your models, never `FileAttachment` — the latter wraps a live stream and
+> cannot be serialised. See [Attachments](_docs/api-reference.md#attachments).
+>
+> **Upgrading from 1.x?** Attachments changed shape in 2.0 — see the
+> [migration guide](_docs/migration-v1-to-v2.md).
 
 ### Layer 3: Extension Methods (Convenience)
 
@@ -323,7 +342,9 @@ See Architecture
  │    ├── {id}.dat        # Encrypted JSON
  │    ├── {id}.meta       # Encrypted metadata
  ├── attachments/
- │    ├── {id}-{filename}.bin
+ │    └── {hash(id)}/
+ │         ├── manifest.dat    # Encrypted attachment metadata
+ │         └── {hash(name)}.bin
  ├── index/
  │    └── search.idx      # Encrypted inverted index
  └── summary/
@@ -342,3 +363,4 @@ See Architecture
 | [docs/architecture.md](_docs/architecture.md)                     | Encryption, atomic writes, and extensibility             |
 | [docs/api-reference.md](_docs/api-reference.md)                   | Interfaces, extension points, and contracts              |
 | [docs/use-cases.md](_docs/use-cases.md)                           | Examples of real-world usage patterns                    |
+| [docs/migration-v1-to-v2.md](_docs/migration-v1-to-v2.md)         | Upgrading from Cabinet 1.x to 2.0                        |

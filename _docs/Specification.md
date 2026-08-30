@@ -32,7 +32,9 @@ Provide a lightweight, AOT-safe, encrypted offline data layer for .NET MAUI apps
  │   │    ├── {record-id}.dat        # Encrypted JSON
  │   │    └── {record-id}.meta       # Encrypted metadata
  │   ├── attachments/
- │   │    ├── {record-id}-{filename}.bin
+ │   │    └── {hash(record-id)}/
+ │   │         ├── manifest.dat    # Encrypted attachment metadata
+ │   │         └── {hash(name)}.bin
  │   ├── index/
  │   │    └── search.idx             # Encrypted inverted index
  │   └── summary/
@@ -45,6 +47,10 @@ Provide a lightweight, AOT-safe, encrypted offline data layer for .NET MAUI apps
 public interface IOfflineStore
 {
     Task SaveAsync<T>(string id, T data, IEnumerable<FileAttachment>? attachments = null);
+    Task<AttachmentInfo> SaveAttachmentAsync(string id, FileAttachment attachment);
+    Task<Stream?> OpenAttachmentAsync(string id, string name);
+    Task<IReadOnlyList<AttachmentInfo>> ListAttachmentsAsync(string id);
+    Task<bool> DeleteAttachmentAsync(string id, string name);
     Task<T?> LoadAsync<T>(string id);
     Task DeleteAsync(string id);
     Task<IEnumerable<SearchResult>> FindAsync(string query);

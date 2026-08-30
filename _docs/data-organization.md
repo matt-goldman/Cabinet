@@ -39,16 +39,22 @@ Aggregate storage reduces I/O and improves indexing performance by up to 300× c
 
 ### 2. Attachments
 
-Store binary attachments separately but keep their metadata in the main record.
+Store binary attachments separately but keep their metadata in the main record. Cabinet does this
+for you: pass a `FileAttachment` when saving, keep the returned `AttachmentInfo` on the record, and
+read the content back with `OpenAttachmentAsync`.
 
 ```tree
 /attachments/
- ├── {lessonId}-photo1.bin
- ├── {lessonId}-photo2.bin
+ └── {hash(lessonId)}/
+      ├── manifest.dat        # Encrypted attachment metadata
+      ├── {hash(photo1)}.bin  # Encrypted content
+      └── {hash(photo2)}.bin
 ```
 
-All attachments are encrypted with the same provider.
-When attachments are large, consider a lazy-load strategy to avoid unnecessary decryption.
+All attachments are encrypted with the same provider, and are authenticated against both the record
+id and the attachment name, so a blob cannot be substituted for another.
+Content is only decrypted when it is explicitly opened, so large attachments cost nothing on a record
+load.
 
 ### 3. Summaries
 
