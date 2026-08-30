@@ -1,5 +1,7 @@
 # Cabinet
 
+> ⚠️ **IMPORTANT:** If you're upgrading from v1.x.x to v2.x.x there are breaking changes. These may not affect you but please check the migration guide if you experience any problems.
+
 **Fun fact:** The original issue in my app that prompted me to build this turned out to be nothing to do with my data storage. Fixed a startup deadlock and everything worked, with LiteDB. So...I guess I learned something...?
 
 ![NuGet Version](https://img.shields.io/nuget/v/Cabinet?style=for-the-badge)
@@ -142,6 +144,9 @@ await lessons.RemoveAsync(lesson.LessonId);
 
 > Put `AttachmentInfo` on your models, never `FileAttachment` — the latter wraps a live stream and
 > cannot be serialised. See [Attachments](_docs/api-reference.md#attachments).
+>
+> **Upgrading from 1.x?** Attachments changed shape in 2.0 — see the
+> [migration guide](_docs/migration-v1-to-v2.md).
 
 ### Layer 3: Extension Methods (Convenience)
 
@@ -358,3 +363,4 @@ See Architecture
 | [docs/architecture.md](_docs/architecture.md)                     | Encryption, atomic writes, and extensibility             |
 | [docs/api-reference.md](_docs/api-reference.md)                   | Interfaces, extension points, and contracts              |
 | [docs/use-cases.md](_docs/use-cases.md)                           | Examples of real-world usage patterns                    |
+| [docs/migration-v1-to-v2.md](_docs/migration-v1-to-v2.md)         | Upgrading from Cabinet 1.x to 2.0                        |
