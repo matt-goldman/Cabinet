@@ -158,9 +158,10 @@ public class AttachmentTests : IDisposable
 		Assert.Equal(["kept.bin", "new.bin"], (await _store.ListAttachmentsAsync("rec")).Select(a => a.Name).Order());
 		Assert.Null(await _store.OpenAttachmentAsync("rec", "old.bin"));
 
-		// The dropped blob is gone from disk, not merely unlisted: one manifest plus two blobs.
+		// The dropped blob is gone from disk, not merely unlisted.
 		var directory = Directory.GetDirectories(Path.Combine(_testRootPath, "attachments")).Single();
-		Assert.Equal(3, Directory.GetFiles(directory).Length);
+		Assert.Equal(2, Directory.GetFiles(directory, "*.bin").Length);
+		Assert.Empty(Directory.GetFiles(directory, "*.tmp"));
 	}
 
 	[Fact]

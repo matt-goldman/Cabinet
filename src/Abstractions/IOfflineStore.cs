@@ -78,6 +78,18 @@ public interface IOfflineStore
     Task<IReadOnlyList<AttachmentInfo>> ListAttachmentsAsync(string id, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Lists the record identifiers that currently have an attachment directory in the store.
+    /// </summary>
+    /// <param name="cancellationToken">Optional token to cancel the operation</param>
+    /// <returns>The record identifiers, including any whose record no longer exists</returns>
+    /// <remarks>
+    /// Intended for reclaiming space: comparing this against the records you still hold identifies
+    /// attachments orphaned by a delete that did not complete, or by records removed outside the
+    /// store's own delete path. It is not a cheap call — every attachment directory is opened.
+    /// </remarks>
+    Task<IReadOnlyList<string>> ListAttachmentRecordIdsAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Deletes a single attachment from a record, leaving the record itself unchanged.
     /// </summary>
     /// <param name="id">The unique identifier of the record the attachment belongs to</param>

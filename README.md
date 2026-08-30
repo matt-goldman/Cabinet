@@ -127,7 +127,21 @@ var recentLessons = lessons.OrderByDescending(l => l.Date).Take(10);
 
 // Search using encrypted index
 var results = await lessons.FindAsync("seagulls");
+
+// Attach a file - bytes are stored as a separate encrypted file, keyed on the record's ID.
+// Keep the returned metadata on the record; the content is read back only when you ask for it.
+await using var photo = File.OpenRead("seagull.jpg");
+lesson.Attachments = [await lessons.AddAttachmentAsync(lesson.LessonId, new FileAttachment("seagull.jpg", "image/jpeg", photo))];
+await lessons.UpdateAsync(lesson.LessonId, lesson);
+
+await using var content = await lessons.OpenAttachmentAsync(lesson.LessonId, "seagull.jpg");
+
+// Removing the record removes its attachments too
+await lessons.RemoveAsync(lesson.LessonId);
 ```
+
+> Put `AttachmentInfo` on your models, never `FileAttachment` — the latter wraps a live stream and
+> cannot be serialised. See [Attachments](_docs/api-reference.md#attachments).
 
 ### Layer 3: Extension Methods (Convenience)
 

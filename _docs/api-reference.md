@@ -324,17 +324,64 @@ public sealed record RecordHeader(
 
 ### RecordSet\<T>
 
-A queryable collection of records with LINQ-style operations.
+The high-level, domain-oriented API for a collection of records of one type. It owns the aggregate
+document, the in-memory cache, CRUD, and the attachments held against each record.
 
 ```csharp
-public sealed class RecordSet<T>
+public sealed class RecordSet<T> where T : class
 {
-    public RecordSet<T> Where(Func<T, bool> predicate);
-    public RecordSet<TResult> Select<TResult>(Func<T, TResult> selector);
-    public RecordSet<T> OrderBy<TKey>(Func<T, TKey> keySelector);
-    public RecordSet<T> OrderByDescending<TKey>(Func<T, TKey> keySelector);
-    public RecordSet<T> Skip(int count);
-    public RecordSet<T> Take(int count);
+    public Task LoadAsync();
+    public Task<IEnumerable<T>> GetAllAsync();
+    public Task<T?> GetByIdAsync(string id);
+    public Task AddAsync(T record);
+    public Task<bool> UpdateAsync(string id, T record);
+    public Task<bool> RemoveAsync(string id);
+
+    public Task<AttachmentInfo> AddAttachmentAsync(string recordId, FileAttachment attachment);
+    public Task<Stream?> OpenAttachmentAsync(string recordId, string name);
+    public Task<IReadOnlyList<AttachmentInfo>> ListAttachmentsAsync(string recordId);
+    public Task<bool> RemoveAttachmentAsync(string recordId, string name);
+    public Task<int> CompactAttachmentsAsync();
+}
+```
+
+#### Attachments
+
+A RecordSet stores every record in one aggregate document keyed on the set's file name, so record
+IDs are only unique within a set. Attachments are therefore namespaced by the set, and keyed on the
+record's own ID — two sets that happen to share a record ID do not collide.
+
+```csharp
+// Store the bytes, keep the metadata on the record
+await using var photo = File.OpenRead("photo.jpg");
+lesson.Attachments = [await lessons.AddAttachmentAsync(lesson.Id, new FileAttachment("photo.jpg", "image/jpeg", photo))];
+await lessons.UpdateAsync(lesson.Id, lesson);
+
+// Read back on demand
+await using var content = await lessons.OpenAttachmentAsync(lesson.Id, "photo.jpg");
+```
+
+`RemoveAsync` deletes the record's attachments along with the record. The set is saved first and the
+attachments deleted after, so an interruption between the two leaves orphaned bytes rather than a
+record referencing attachments that are gone. `CompactAttachmentsAsync` reclaims those orphans; it
+opens every attachment directory in the store, so call it on a maintenance path rather than on load.
+
+Attachment *metadata* is cached alongside the records when caching is enabled; attachment *content*
+is never cached and never loaded with the record.
+
+### RecordQuery\<T>
+
+A queryable collection of records with LINQ-style operations, returned by the query extension methods.
+
+```csharp
+public sealed class RecordQuery<T>
+{
+    public RecordQuery<T> Where(Func<T, bool> predicate);
+    public RecordQuery<TResult> Select<TResult>(Func<T, TResult> selector);
+    public RecordQuery<T> OrderBy<TKey>(Func<T, TKey> keySelector);
+    public RecordQuery<T> OrderByDescending<TKey>(Func<T, TKey> keySelector);
+    public RecordQuery<T> Skip(int count);
+    public RecordQuery<T> Take(int count);
     public T First();
     public T? FirstOrDefault();
     public T Single();
@@ -360,13 +407,13 @@ Provides deferred execution and composable queries over search results.
 public static class OfflineStoreExtensions
 {
     // Find records matching multiple search terms (OR operation)
-    public static Task<RecordSet<T>> FindManyAsync<T>(
+    public static Task<RecordQuery<T>> FindManyAsync<T>(
         this IOfflineStore store,
         params string[] terms);
 
-    // Apply predicate filter to RecordSet
-    public static RecordSet<T> WhereMatch<T>(
-        this RecordSet<T> source,
+    // Apply predicate filter to RecordQuery
+    public static RecordQuery<T> WhereMatch<T>(
+        this RecordQuery<T> source,
         Func<T, bool> predicate);
 
     // Apply predicate filter to IEnumerable
@@ -375,7 +422,7 @@ public static class OfflineStoreExtensions
         Func<T, bool> predicate);
 
     // Find and filter in one operation
-    public static Task<RecordSet<T>> FindWhereAsync<T>(
+    public static Task<RecordQuery<T>> FindWhereAsync<T>(
         this IOfflineStore store,
         Func<T, bool> predicate,
         params string[] terms);

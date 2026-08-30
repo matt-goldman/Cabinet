@@ -177,6 +177,24 @@ var attachments = await store.ListAttachmentsAsync("record-id");
 await using var content = await store.OpenAttachmentAsync("record-id", "photo.jpg");
 ```
 
+### Attachments via RecordSet
+
+`RecordSet<T>` is the API most consumers should use. It keys attachments on the record's own ID,
+namespaced by the set (records IDs are only unique within a set, since the whole set is one document).
+
+```csharp
+lesson.Attachments = [await lessons.AddAttachmentAsync(lesson.Id, attachment)];
+await lessons.UpdateAsync(lesson.Id, lesson);
+
+await using var content = await lessons.OpenAttachmentAsync(lesson.Id, "photo.jpg");
+
+await lessons.RemoveAsync(lesson.Id);          // cascades to the record's attachments
+await lessons.CompactAttachmentsAsync();       // reclaims orphans from interrupted removals
+```
+
+`RemoveAsync` saves the set before deleting attachments, so an interruption leaves orphaned bytes
+rather than a record referencing attachments that are gone.
+
 **`FileAttachment` is a write-side handle only.** It wraps a live `Stream`, so it cannot be
 serialised and is never valid as a property on a record model — put `AttachmentInfo` (name, content
 type, length) on the model instead and read the bytes back on demand. The `[AotRecord]` source

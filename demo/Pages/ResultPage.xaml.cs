@@ -16,7 +16,7 @@ public partial class ResultPage : ContentPage
 
 			if (lesson.Attachments?.Count > 0)
 			{
-				_ = LoadPhotoAsync(dataService, lesson.Id.ToString(), lesson.Attachments[0]);
+				_ = LoadPhotoAsync(() => dataService.ReadLessonAttachmentAsync(lesson.Id, lesson.Attachments[0]));
 			}
 		}
 
@@ -27,7 +27,7 @@ public partial class ResultPage : ContentPage
 
 		if (student.ProfilePhoto != null)
 		{
-			_ = LoadPhotoAsync(dataService, student.Id, student.ProfilePhoto);
+			_ = LoadPhotoAsync(() => dataService.ReadStudentAttachmentAsync(student.Id, student.ProfilePhoto));
 		}
 	}
 
@@ -35,9 +35,9 @@ public partial class ResultPage : ContentPage
 	/// Reads the attachment's bytes back out of the encrypted store and displays them. The record
 	/// itself carries only the metadata, so the content is fetched on demand.
 	/// </summary>
-	private async Task LoadPhotoAsync(OfflineDataService dataService, string recordId, Cabinet.Core.AttachmentInfo attachment)
+	private async Task LoadPhotoAsync(Func<Task<byte[]?>> read)
 	{
-		var content = await dataService.ReadAttachmentAsync(recordId, attachment);
+		var content = await read();
 		if (content is null) return;
 
 		Photo.Source = ImageSource.FromStream(() => new MemoryStream(content));

@@ -41,6 +41,7 @@ public sealed class RecordSet<T> where T : class
 	private readonly string _fileName;
 	private readonly Func<T, string> _idGetter;
 	private Dictionary<string, T>? _cache;
+	private Dictionary<string, IReadOnlyList<AttachmentInfo>>? _attachmentCache;
 	private bool _isLoaded;
 
 	/// <summary>
@@ -78,6 +79,7 @@ public sealed class RecordSet<T> where T : class
 	public async Task LoadAsync(CancellationToken cancellationToken = default)
 	{
 		var records = await _store.LoadAsync<List<T>>(_fileName, cancellationToken);
+		_attachmentCache = null;
 
 		if (records == null)
 		{
@@ -164,11 +166,17 @@ public sealed class RecordSet<T> where T : class
 	}
 
 	/// <summary>
-	/// Removes a record by its ID. Automatically persists to disk.
+	/// Removes a record by its ID, along with any attachments held against it.
+	/// Automatically persists to disk.
 	/// </summary>
 	/// <param name="id">The ID of the record to remove</param>
 	/// <param name="cancellationToken">Optional token to cancel the operation</param>
 	/// <returns>True if the record was found and removed, false otherwise</returns>
+	/// <remarks>
+	/// The set is saved before the attachments are deleted, so an interruption between the two
+	/// leaves orphaned attachment bytes rather than a record referencing attachments that are gone.
+	/// Orphans can be reclaimed with <see cref="CompactAttachmentsAsync"/>.
+	/// </remarks>
 	public async Task<bool> RemoveAsync(string id, CancellationToken cancellationToken = default)
 	{
 		await EnsureLoadedAsync(cancellationToken);
@@ -179,7 +187,138 @@ public sealed class RecordSet<T> where T : class
 		}
 
 		await SaveAllAsync(cancellationToken);
+
+		// Publish the removal first, then reclaim the bytes. DeleteAsync on the attachment key removes
+		// the whole attachment directory; no record is ever stored under that key, so nothing else goes
+		// with it.
+		await _store.DeleteAsync(AttachmentKey(id), cancellationToken);
+		_attachmentCache?.Remove(id);
+
 		return true;
+	}
+
+	/// <summary>
+	/// Adds or replaces an attachment on a record in this set. The bytes are stored as a separate
+	/// encrypted file; the record itself is not rewritten.
+	/// </summary>
+	/// <param name="recordId">The ID of the record to attach to</param>
+	/// <param name="attachment">The attachment to store</param>
+	/// <param name="cancellationToken">Optional token to cancel the operation</param>
+	/// <returns>The metadata describing the stored attachment</returns>
+	/// <remarks>
+	/// Keep the returned <see cref="AttachmentInfo"/> on your record if you want the attachment
+	/// discoverable from the record itself, and save the record as usual. An existing attachment with
+	/// the same name is replaced.
+	/// </remarks>
+	public async Task<AttachmentInfo> AddAttachmentAsync(string recordId, FileAttachment attachment, CancellationToken cancellationToken = default)
+	{
+		ArgumentException.ThrowIfNullOrEmpty(recordId);
+		ArgumentNullException.ThrowIfNull(attachment);
+
+		var info = await _store.SaveAttachmentAsync(AttachmentKey(recordId), attachment, cancellationToken);
+		_attachmentCache?.Remove(recordId);
+
+		return info;
+	}
+
+	/// <summary>
+	/// Opens the content of an attachment on a record in this set.
+	/// </summary>
+	/// <param name="recordId">The ID of the record the attachment belongs to</param>
+	/// <param name="name">The logical name of the attachment</param>
+	/// <param name="cancellationToken">Optional token to cancel the operation</param>
+	/// <returns>A readable stream of the decrypted content, or null if no such attachment exists</returns>
+	/// <remarks>The caller owns the returned stream and is responsible for disposing it.</remarks>
+	public Task<Stream?> OpenAttachmentAsync(string recordId, string name, CancellationToken cancellationToken = default)
+	{
+		ArgumentException.ThrowIfNullOrEmpty(recordId);
+		return _store.OpenAttachmentAsync(AttachmentKey(recordId), name, cancellationToken);
+	}
+
+	/// <summary>
+	/// Lists the attachments held against a record in this set.
+	/// </summary>
+	/// <param name="recordId">The ID of the record</param>
+	/// <param name="cancellationToken">Optional token to cancel the operation</param>
+	/// <returns>The attachment metadata, or an empty list if the record has no attachments</returns>
+	/// <remarks>
+	/// Metadata is cached in memory when caching is enabled; the content itself is never cached.
+	/// </remarks>
+	public async Task<IReadOnlyList<AttachmentInfo>> ListAttachmentsAsync(string recordId, CancellationToken cancellationToken = default)
+	{
+		ArgumentException.ThrowIfNullOrEmpty(recordId);
+
+		if (_attachmentCache != null && _attachmentCache.TryGetValue(recordId, out var cached))
+		{
+			return cached;
+		}
+
+		var attachments = await _store.ListAttachmentsAsync(AttachmentKey(recordId), cancellationToken);
+
+		if (_options.EnableCaching)
+		{
+			_attachmentCache ??= [];
+			_attachmentCache[recordId] = attachments;
+		}
+
+		return attachments;
+	}
+
+	/// <summary>
+	/// Removes a single attachment from a record in this set.
+	/// </summary>
+	/// <param name="recordId">The ID of the record the attachment belongs to</param>
+	/// <param name="name">The logical name of the attachment to remove</param>
+	/// <param name="cancellationToken">Optional token to cancel the operation</param>
+	/// <returns>True if the attachment existed and was removed, false otherwise</returns>
+	public async Task<bool> RemoveAttachmentAsync(string recordId, string name, CancellationToken cancellationToken = default)
+	{
+		ArgumentException.ThrowIfNullOrEmpty(recordId);
+
+		var removed = await _store.DeleteAttachmentAsync(AttachmentKey(recordId), name, cancellationToken);
+		_attachmentCache?.Remove(recordId);
+
+		return removed;
+	}
+
+	/// <summary>
+	/// Deletes attachments belonging to records that are no longer in this set.
+	/// </summary>
+	/// <param name="cancellationToken">Optional token to cancel the operation</param>
+	/// <returns>The number of records whose orphaned attachments were removed</returns>
+	/// <remarks>
+	/// Attachments are normally removed with their record by <see cref="RemoveAsync"/>. This reclaims
+	/// what an interrupted removal left behind, and is safe but not cheap: every attachment directory
+	/// in the store is opened. Call it on a maintenance path, not on every load.
+	/// </remarks>
+	public async Task<int> CompactAttachmentsAsync(CancellationToken cancellationToken = default)
+	{
+		await EnsureLoadedAsync(cancellationToken);
+
+		var prefix = $"{_fileName}#";
+		var owners = await _store.ListAttachmentRecordIdsAsync(cancellationToken);
+		var removed = 0;
+
+		foreach (var owner in owners)
+		{
+			// Only this set's attachments; another RecordSet's records are not ours to judge.
+			if (!owner.StartsWith(prefix, StringComparison.Ordinal))
+			{
+				continue;
+			}
+
+			var recordId = owner[prefix.Length..];
+			if (_cache != null && _cache.ContainsKey(recordId))
+			{
+				continue;
+			}
+
+			await _store.DeleteAsync(owner, cancellationToken);
+			_attachmentCache?.Remove(recordId);
+			removed++;
+		}
+
+		return removed;
 	}
 
 	/// <summary>
@@ -257,6 +396,7 @@ public sealed class RecordSet<T> where T : class
 	{
 		_isLoaded = false;
 		_cache = null;
+		_attachmentCache = null;
 		await LoadAsync(cancellationToken);
 	}
 
@@ -297,6 +437,17 @@ public sealed class RecordSet<T> where T : class
 		var records = _cache.Values.ToList();
 		await _store.SaveAsync(_fileName, records, cancellationToken: cancellationToken);
 	}
+
+	/// <summary>
+	/// The store-level key under which a record's attachments are held.
+	/// </summary>
+	/// <remarks>
+	/// A RecordSet keeps every record in one document keyed on the set's file name, so record IDs are
+	/// only unique within the set. Attachments are therefore namespaced by the set, which keeps two
+	/// sets that happen to share a record ID from colliding. The separator is a character that cannot
+	/// appear in a type name, and is safe in a file name on every supported platform.
+	/// </remarks>
+	private string AttachmentKey(string recordId) => $"{_fileName}#{recordId}";
 
 	private string GetId(T record)
 	{

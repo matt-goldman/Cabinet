@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using Cabinet.Abstractions;
 
@@ -105,6 +107,7 @@ public sealed class FileOfflineStore : IOfflineStore
             {
                 var directory = AttachmentDirectory(id);
                 Directory.CreateDirectory(directory);
+                await WriteOwnerAsync(directory, id, cancellationToken).ConfigureAwait(false);
 
                 var manifest = new List<AttachmentInfo>();
                 var seen = new HashSet<string>(StringComparer.Ordinal);
@@ -200,6 +203,7 @@ public sealed class FileOfflineStore : IOfflineStore
 
         var directory = AttachmentDirectory(id);
         Directory.CreateDirectory(directory);
+        await WriteOwnerAsync(directory, id, cancellationToken).ConfigureAwait(false);
 
         var content = await ReadAllAsync(attachment.Content, cancellationToken).ConfigureAwait(false);
         var encrypted = await _crypto.EncryptAsync(content, AttachmentContext(id, attachment.LogicalName), cancellationToken).ConfigureAwait(false);
@@ -289,6 +293,34 @@ public sealed class FileOfflineStore : IOfflineStore
         if (File.Exists(blobPath)) File.Delete(blobPath);
 
         return true;
+    }
+
+    /// <inheritdoc/>
+    public async Task<IReadOnlyList<string>> ListAttachmentRecordIdsAsync(CancellationToken cancellationToken = default)
+    {
+        var owners = new List<string>();
+        var root = Path.Combine(_root, "attachments");
+
+        foreach (var directory in Directory.EnumerateDirectories(root))
+        {
+            var path = OwnerPath(directory);
+            if (!File.Exists(path)) continue;
+
+            var encrypted = await File.ReadAllBytesAsync(path, cancellationToken).ConfigureAwait(false);
+
+            try
+            {
+                var decrypted = await _crypto.DecryptAsync(encrypted, OwnerContext, cancellationToken).ConfigureAwait(false);
+                owners.Add(Encoding.UTF8.GetString(decrypted));
+            }
+            catch (CryptographicException)
+            {
+                // An unreadable marker means the directory cannot be attributed to a record. Leave it
+                // alone rather than guess: enumeration is used to reclaim space, not to delete blindly.
+            }
+        }
+
+        return owners;
     }
 
     /// <inheritdoc/>
@@ -394,6 +426,29 @@ public sealed class FileOfflineStore : IOfflineStore
 
     private static string ManifestContext(string id) => $"{id}\u0000#manifest";
 
+    private static string OwnerPath(string directory) => Path.Combine(directory, "owner.dat");
+
+    /// <summary>
+    /// The additional authenticated data for the owner marker. Unlike the manifest and the blobs,
+    /// this cannot be bound to the record id, because the id is what the marker exists to recover.
+    /// Tampering with it can only misdirect a sweep: the manifest and blobs in the directory stay
+    /// bound to the real id and will not decrypt under any other.
+    /// </summary>
+    private const string OwnerContext = "#owner";
+
+    /// <summary>
+    /// Records which record an attachment directory belongs to, so that owners can be enumerated
+    /// even though directory names are hashes.
+    /// </summary>
+    private async Task WriteOwnerAsync(string directory, string id, CancellationToken cancellationToken)
+    {
+        var path = OwnerPath(directory);
+        if (File.Exists(path)) return;
+
+        var encrypted = await _crypto.EncryptAsync(Encoding.UTF8.GetBytes(id), OwnerContext, cancellationToken).ConfigureAwait(false);
+        await File.WriteAllBytesAsync(path, encrypted, cancellationToken).ConfigureAwait(false);
+    }
+
     private async Task WriteManifestAsync(string path, string id, List<AttachmentInfo> manifest, CancellationToken cancellationToken)
     {
         // Serialised with Cabinet's own context rather than _jsonOptions: a caller's source-generated
@@ -437,6 +492,7 @@ public sealed class FileOfflineStore : IOfflineStore
             .ToHashSet(StringComparer.Ordinal);
 
         keep.Add("manifest.dat");
+        keep.Add("owner.dat");
 
         try
         {
