@@ -27,7 +27,10 @@ src/
 ```
 /AppData/
  ├── records/          # Encrypted JSON records
- ├── attachments/      # Encrypted binary attachments
+ ├── attachments/      # One directory per record, keyed by a hash of the record id
+ │   └── {hash(recordId)}/
+ │       ├── manifest.dat        # Encrypted attachment metadata
+ │       └── {hash(name)}.bin    # Encrypted attachment content
  ├── index/           # Encrypted search index
  └── summary/         # Encrypted metadata summaries
 ```
@@ -36,7 +39,7 @@ src/
 - Interface-based abstraction for extensibility
 - Dependency injection friendly
 - Atomic file writes (write to .tmp, then rename)
-- Per-file encryption with HKDF key derivation
+- Per-file authenticated encryption, with the file's identity bound in as AAD
 - No plaintext ever written to disk
 
 ## Development Guidelines
@@ -70,10 +73,20 @@ src/
 
 - All data must be encrypted at rest using authenticated encryption (AES-GCM)
 - Master keys are stored in platform `SecureStorage`
-- Per-file keys derived using HKDF with file ID as context
+- A single master key is used with AES-256-GCM; the file's context (record id, and for
+  attachments the attachment name too) is bound in as additional authenticated data. Note
+  that this is AAD binding, not HKDF per-file key derivation
 - Atomic writes prevent partial/corrupted data on disk
 - Never write decrypted content to disk, only to memory
-- File extensions: `.dat` for encrypted data, `.tmp` for in-progress writes
+- File extensions: `.dat` for encrypted data, `.bin` for attachment content, `.tmp` for in-progress writes
+- A save stages every file as `.tmp`, then renames attachment blobs, then the manifest, then the
+  record. The record rename is the commit point, so a record is never visible referencing
+  attachments that are not on disk. This is crash consistency, not durability — staged writes are
+  not flushed before rename
+- Attachment blobs are authenticated against both the record id and the attachment name, so a blob
+  cannot be substituted for another record's or another name's
+- User-supplied names are never used directly as path segments; record ids and attachment names are
+  hashed to form directory and file names
 
 ### API Design
 
@@ -146,11 +159,28 @@ var results = await store.SearchAsync("search query");
 ```
 
 ### With attachments
+
+Attachment bytes are stored as separate encrypted files, never inside the record's JSON.
+
 ```csharp
+// Save a record and its attachments together (all-or-nothing)
+await using var photoStream = File.OpenRead("photo.jpg");
 await store.SaveAsync("record-id", myData, new[] {
-    new FileAttachment("photo.jpg", photoStream)
+    new FileAttachment("photo.jpg", "image/jpeg", photoStream)
 });
+
+// Add one attachment to an existing record
+var info = await store.SaveAttachmentAsync("record-id", attachment);
+
+// List and read back
+var attachments = await store.ListAttachmentsAsync("record-id");
+await using var content = await store.OpenAttachmentAsync("record-id", "photo.jpg");
 ```
+
+**`FileAttachment` is a write-side handle only.** It wraps a live `Stream`, so it cannot be
+serialised and is never valid as a property on a record model — put `AttachmentInfo` (name, content
+type, length) on the model instead and read the bytes back on demand. The `[AotRecord]` source
+generator reports CAB002 for models that get this wrong.
 
 ## Important Notes
 

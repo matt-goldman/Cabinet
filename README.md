@@ -323,7 +323,9 @@ See Architecture
  │    ├── {id}.dat        # Encrypted JSON
  │    ├── {id}.meta       # Encrypted metadata
  ├── attachments/
- │    ├── {id}-{filename}.bin
+ │    └── {hash(id)}/
+ │         ├── manifest.dat    # Encrypted attachment metadata
+ │         └── {hash(name)}.bin
  ├── index/
  │    └── search.idx      # Encrypted inverted index
  └── summary/

@@ -17,10 +17,10 @@ public class StudentRecord
 	public List<string> Subjects { get; set; } = [];
 	
 	/// <summary>
-	/// Profile photo stored as an attachment.
-	/// This demonstrates FileAttachment as a property - Cabinet handles it automatically.
+	/// Metadata for the student's profile photo. The bytes are stored as a separate encrypted
+	/// attachment, keyed on this record's Id, and read back with IOfflineStore.OpenAttachmentAsync.
 	/// </summary>
-	public FileAttachment? ProfilePhoto { get; set; }
+	public AttachmentInfo? ProfilePhoto { get; set; }
 	
 	/// <summary>
 	/// Base64-encoded certificate (custom encoding example).

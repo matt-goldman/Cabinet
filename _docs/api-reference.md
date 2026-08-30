@@ -16,6 +16,11 @@ public interface IOfflineStore
     Task DeleteAsync(string id);
     Task<IEnumerable<SearchResult>> FindAsync(string query);
     Task<IEnumerable<SearchResult<T>>> FindAsync<T>(string query);
+
+    Task<AttachmentInfo> SaveAttachmentAsync(string id, FileAttachment attachment);
+    Task<Stream?> OpenAttachmentAsync(string id, string name);
+    Task<IReadOnlyList<AttachmentInfo>> ListAttachmentsAsync(string id);
+    Task<bool> DeleteAttachmentAsync(string id, string name);
 }
 ```
 
@@ -25,6 +30,12 @@ public interface IOfflineStore
 - Saves data with the specified identifier to encrypted storage.
 - The data is serialised to JSON, encrypted, and written atomically to disk.
 - Optionally accepts file attachments that are stored separately and encrypted.
+- Passing `null` for `attachments` leaves any existing attachments untouched. Passing a collection
+  replaces the record's attachment set, so an empty collection removes all of them.
+- The record and its attachments are committed together: every file is staged first, then the
+  attachment blobs are renamed into place, then the manifest, then the record. The record rename is
+  the commit point, so a record never becomes visible referencing attachments that are not on disk.
+  This is crash consistency, not durability — a power loss can still truncate a staged file.
 - Automatically updates the search index if an `IIndexProvider` is configured.
 
 **LoadAsync\<T>**
@@ -40,6 +51,22 @@ public interface IOfflineStore
 - Searches for records matching the specified query string.
 - Returns metadata-only results (no data loaded).
 - Requires an `IIndexProvider` to be configured; returns empty collection otherwise.
+
+**SaveAttachmentAsync**
+- Adds or replaces a single attachment on an existing record, leaving its other attachments and the
+  record itself unchanged.
+- Returns the `AttachmentInfo` describing what was stored — put this on your record model.
+
+**OpenAttachmentAsync**
+- Opens an attachment's decrypted content for reading, or returns `null` if it does not exist.
+- The caller owns the returned stream and is responsible for disposing it.
+
+**ListAttachmentsAsync**
+- Returns the metadata for every attachment stored against a record, or an empty list if it has none.
+
+**DeleteAttachmentAsync**
+- Deletes a single attachment, leaving the record itself unchanged.
+- Returns `true` if the attachment existed, `false` otherwise.
 
 **FindAsync\<T>**
 - Searches for records and loads their data.
@@ -124,9 +151,16 @@ public sealed class FileOfflineStore : IOfflineStore
 ```
 /AppData/
  ├── records/          # Encrypted JSON records (.dat files)
- ├── attachments/      # Encrypted binary attachments (.bin files)
+ ├── attachments/      # One directory per record, keyed by a hash of the record id
+ │   └── {hash(recordId)}/
+ │       ├── manifest.dat        # Encrypted attachment metadata for that record
+ │       └── {hash(name)}.bin    # Encrypted attachment content
  └── index/            # Encrypted search index
 ```
+
+Attachment names are hashed rather than used directly as path segments, so an arbitrary logical name
+cannot escape the attachments directory, and one record's attachments cannot be confused with
+another's. Deleting a record removes its attachment directory wholesale.
 
 ### AesGcmEncryptionProvider
 
@@ -175,19 +209,70 @@ public class PersistentIndexProvider : IIndexProvider
 
 ### FileAttachment
 
-Represents a file attachment that can be stored alongside a record.
+A write-side handle to attachment content. Pass it to `SaveAsync` or `SaveAttachmentAsync` to store
+the bytes as a separate encrypted file.
 
 ```csharp
-public sealed record FileAttachment(
-    string LogicalName,
-    string ContentType,
-    Stream Content);
+public sealed class FileAttachment
+{
+    public FileAttachment(string logicalName, string contentType, Stream content);
+    public FileAttachment(string logicalName, string contentType, byte[] content);
+
+    public string LogicalName { get; }
+    public string ContentType { get; }
+    public Stream Content { get; }
+}
 ```
 
 **Properties:**
-- `LogicalName`: The logical file name for the attachment (e.g., "photo.jpg")
+- `LogicalName`: The logical file name for the attachment (e.g., "photo.jpg"). Must be unique within
+  a record, and must not be empty or contain path separators or control characters.
 - `ContentType`: The MIME type or content type (e.g., "image/jpeg")
-- `Content`: The stream containing the attachment data
+- `Content`: The stream containing the attachment data. Read from its current position to the end
+  during a save; the caller owns it and is responsible for disposing it.
+
+> **This type cannot be serialised, and is not valid as a property on a record model.** It wraps a
+> live stream, and attempting to serialise one throws `NotSupportedException`. Put `AttachmentInfo`
+> on your models instead. If you are using `[AotRecord]`, the source generator reports this as CAB002
+> at build time.
+
+### AttachmentInfo
+
+Serialisable metadata describing a stored attachment. This is the type to put on a record model.
+
+```csharp
+public sealed record AttachmentInfo(
+    string Name,
+    string ContentType,
+    long Length);
+```
+
+**Properties:**
+- `Name`: The logical file name of the attachment
+- `ContentType`: The MIME type or content type
+- `Length`: The length in bytes of the attachment content
+
+**Typical use:**
+
+```csharp
+public class LessonRecord
+{
+    public Guid Id { get; set; }
+    public string Subject { get; set; } = string.Empty;
+
+    // Metadata travels with the record; the bytes live in the attachment store.
+    public List<AttachmentInfo> Attachments { get; set; } = [];
+}
+
+// Writing
+await using var photo = File.OpenRead("photo.jpg");
+var info = await store.SaveAttachmentAsync(lesson.Id.ToString(), new FileAttachment("photo.jpg", "image/jpeg", photo));
+lesson.Attachments.Add(info);
+await store.SaveAsync(lesson.Id.ToString(), lesson);
+
+// Reading back, on demand
+await using var content = await store.OpenAttachmentAsync(lesson.Id.ToString(), "photo.jpg");
+```
 
 ### SearchResult
 
@@ -341,12 +426,15 @@ await store.SaveAsync("lesson-001", new LessonRecord
     Description = "We observed seagulls at the beach"
 });
 
-// Save with attachments
-var photoStream = File.OpenRead("photo.jpg");
+// Save with attachments - record and attachments commit together
+await using var photoStream = File.OpenRead("photo.jpg");
 await store.SaveAsync("lesson-002", lessonData, new[]
 {
     new FileAttachment("photo.jpg", "image/jpeg", photoStream)
 });
+
+// Read an attachment back
+await using var photo = await store.OpenAttachmentAsync("lesson-002", "photo.jpg");
 
 // Save aggregate (multiple records in one file)
 await store.SaveAsync("lessons-2025", new List<LessonRecord>
@@ -445,7 +533,8 @@ While not currently exposed as an interface, you can fork `FileOfflineStore` and
 1. **Key Management**: Store your master key in `SecureStorage`, never hardcode it.
 2. **Error Handling**: Wrap crypto operations in try-catch to handle `CryptographicException`.
 3. **Aggregate Files**: Use aggregate storage patterns (multiple records per file) for better performance.
-4. **Lazy Loading**: Load attachments only when needed to reduce memory usage.
+4. **Lazy Loading**: Attachment bytes are never loaded with the record. Keep `AttachmentInfo` on the
+   model and call `OpenAttachmentAsync` only at the point you need the content.
 5. **Index Maintenance**: Let the store handle indexing automatically; avoid manual index updates.
 6. **Thread Safety**: All core operations are async and thread-safe, but avoid concurrent saves to the same record ID.
 
