@@ -41,6 +41,7 @@ public sealed class RecordSet<T> where T : class
 	private readonly string _fileName;
 	private readonly Func<T, string> _idGetter;
 	private Dictionary<string, T>? _cache;
+	private Dictionary<string, FileAttachment>? _attachmentCache;
 	private bool _isLoaded;
 
 	/// <summary>

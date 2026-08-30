@@ -48,7 +48,7 @@ src/
 - **Minimum .NET version: .NET 9**
 - **Never downgrade .NET versions**
 - Development environments must always be upgraded to use .NET 9 or later
-- The project targets: `net9.0`
+- The project targets: `net10.0`
 
 ### Code Style and Formatting
 

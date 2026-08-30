@@ -17,7 +17,6 @@ namespace demo.Services;
 /// </summary>
 public class OfflineDataService
 {
-	private readonly IOfflineStore _store;
 	private readonly RecordSet<LessonRecord> _lessons;
 	private readonly RecordSet<StudentRecord> _students;
 
@@ -32,8 +31,6 @@ public class OfflineDataService
 
 	public OfflineDataService(IOfflineStore store)
 	{
-		_store = store;
-		
 		// Use source-generated RecordSet extensions for type-safe access
 		_lessons = store.CreateLessonRecordRecordSet();
 		_students = store.CreateStudentRecordRecordSet();
@@ -59,20 +56,20 @@ public class OfflineDataService
 			var child = _childNames[Random.Shared.Next(_childNames.Length)];
 			var lesson = new LessonRecord
 			{
-				Id = Guid.NewGuid(),
-				Date = DateOnly.FromDateTime(DateTime.Today.AddDays(-Random.Shared.Next(30))),
-				Subject = _subjects[i % _subjects.Length],
+				Id			= Guid.NewGuid(),
+				Date		= DateOnly.FromDateTime(DateTime.Today.AddDays(-Random.Shared.Next(30))),
+				Subject		= _subjects[i % _subjects.Length],
 				Description = $"{child} {_activities[Random.Shared.Next(_activities.Length)]} in {_subjects[i % _subjects.Length]} class.",
-				Children = [child],
-				Tags = [_subjects[i % _subjects.Length], child, "lesson"],
+				Children	= [child],
+				Tags		= [_subjects[i % _subjects.Length], child, "lesson"],
 			};
 
 			// Demonstrate attachment patterns for lessons:
 			// 1. Add attachments to Attachments collection property (stored with record)
 			if (includeAttachments)
 			{
-				var photoContent = Encoding.UTF8.GetBytes($"PHOTO data for {child}: {RandomNumberGenerator.GetInt32(1000000)}");
-				var photoAttachment = new FileAttachment($"{child}_photo.jpg", "image/jpeg", photoContent);
+				await using var photoStream = await FileSystem.OpenAppPackageFileAsync("sample_image.png");
+				var photoAttachment = new FileAttachment($"{child}_photo.png", "image/png", photoStream);
 
 				lesson.Attachments = [photoAttachment];
 				
@@ -93,12 +90,12 @@ public class OfflineDataService
 			var name = _childNames[Random.Shared.Next(_childNames.Length)];
 			var student = new StudentRecord
 			{
-				Id = $"student-{Guid.NewGuid()}",
-				Name = name,
-				Age = Random.Shared.Next(6, 13),
-				Grade = $"Grade {Random.Shared.Next(1, 7)}",
-				Subjects = [_subjects[Random.Shared.Next(_subjects.Length)]],
-				EnrolmentDate = DateTime.UtcNow.AddDays(-Random.Shared.Next(365)),
+				Id				= $"student-{Guid.NewGuid()}",
+				Name			= name,
+				Age				= Random.Shared.Next(6, 13),
+				Grade			= $"Grade {Random.Shared.Next(1, 7)}",
+				Subjects		= [_subjects[Random.Shared.Next(_subjects.Length)]],
+				EnrolmentDate	= DateTime.UtcNow.AddDays(-Random.Shared.Next(365)),
 			};
 
 			// Demonstrate attachment patterns for students:
@@ -107,9 +104,8 @@ public class OfflineDataService
 			if (includeAttachments)
 			{
 				// Pattern 1: FileAttachment property - Cabinet serializes it with the record
-				var photoBytes = Encoding.UTF8.GetBytes($"PHOTO:{name}:{RandomNumberGenerator.GetInt32(1000000)}");
-				using var photoStream = new MemoryStream(photoBytes);
-				student.ProfilePhoto = new FileAttachment($"{name}_profile.jpg", "image/jpeg", photoStream);
+				await using var photoStream = await FileSystem.OpenAppPackageFileAsync("sample_image.png");
+				student.ProfilePhoto = new FileAttachment($"{name}_profile.png", "image/png", photoStream);
 
 				// Pattern 2: Custom base64 encoding - You control the encoding
 				var certBytes = Encoding.UTF8.GetBytes($"CERTIFICATE:{name}:Age-{student.Age}");
@@ -148,6 +144,7 @@ public class OfflineDataService
 		foreach (var lesson in lessonResults)
 		{
 			resultsWithData.Add(new SearchResultWithData(
+				lesson.Id.ToString(),
 				"Lesson", 
 				$"{lesson.Subject} - {lesson.Date:yyyy-MM-dd}", 
 				lesson.Description));
@@ -156,6 +153,7 @@ public class OfflineDataService
 		foreach (var student in studentResults)
 		{
 			resultsWithData.Add(new SearchResultWithData(
+				student.Id,
 				"Student", 
 				student.Name, 
 				$"Age {student.Age}, {student.Grade}"));
@@ -163,6 +161,18 @@ public class OfflineDataService
 		
 		stopwatch.Stop();
 		return (resultsWithData.Count, stopwatch.Elapsed, resultsWithData);
+	}
+
+	public Task<StudentRecord?> OpenStudentRecordAsync(string studentId) => _students.GetByIdAsync(studentId);
+
+	public async Task<LessonRecord?> OpenLessonRecordAsync(Guid lessonId)
+	{
+		var lessonResults = await _lessons.FindAsync(lessonId.ToString());
+
+		var lessonRecords = lessonResults as LessonRecord[] ?? [.. lessonResults];
+		if (lessonRecords?.Count() != 1) return null;
+		var lesson = lessonRecords.First();
+		return lesson;
 	}
 
 	public Task<(int filesDeleted, TimeSpan duration)> PurgeDataAsync()
@@ -206,6 +216,4 @@ public class OfflineDataService
 		var studentCount = _students.Count();
 		return (lessonCount, studentCount);
 	}
-
-	public record SearchResultWithData(string RecordType, string Title, string Details);
 }
