@@ -153,9 +153,9 @@ public partial class MainViewModel(OfflineDataService dataService) : ObservableO
 			var student = await dataService.OpenStudentRecordAsync(SelectedRecord.Id);
 			await Application.Current!.Windows[0].Page!.Navigation.PushModalAsync(new ResultPage(dataService, null, student));
 		}
-		else if (SelectedRecord.RecordType == "Lesson" && Guid.TryParse(SelectedRecord.Id, out var id))
+		else if (SelectedRecord.RecordType == "Lesson")// && Guid.TryParse(SelectedRecord.Id, out var id))
 		{
-			var lesson = await dataService.OpenLessonRecordAsync(id);
+			var lesson = await dataService.OpenLessonRecordAsync(SelectedRecord.Id);
 			await Application.Current!.Windows[0].Page!.Navigation.PushModalAsync(new ResultPage(dataService, lesson, null));
 		}
 	}

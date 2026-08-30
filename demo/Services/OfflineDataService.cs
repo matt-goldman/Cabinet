@@ -161,14 +161,11 @@ public class OfflineDataService
 
 	public Task<StudentRecord?> OpenStudentRecordAsync(string studentId) => _students.GetByIdAsync(studentId);
 
-	public async Task<LessonRecord?> OpenLessonRecordAsync(Guid lessonId)
+	public async Task<LessonRecord?> OpenLessonRecordAsync(string lessonId)
 	{
-		var lessonResults = await _lessons.FindAsync(lessonId.ToString());
-
-		var lessonRecords = lessonResults as LessonRecord[] ?? [.. lessonResults];
-		if (lessonRecords?.Count() != 1) return null;
-		var lesson = lessonRecords.First();
-		return lesson;
+		var lessonResults = await _lessons.GetByIdAsync(lessonId);
+		
+		return lessonResults;
 	}
 
 	/// <summary>
