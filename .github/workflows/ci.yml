@@ -16,6 +16,7 @@ on:
           - patch
           - minor
           - major
+          - skip
 
 jobs:
 
@@ -27,6 +28,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Tags are needed by the 'skip' path, which reuses the latest one rather than cutting a new one.
+          fetch-tags: true
 
       # Decide which part of the version to bump. A manual run uses the dispatch input; a push to
       # main takes it from the merged PR's labels, defaulting to patch when none is present.
@@ -77,6 +81,7 @@ jobs:
 
       - name: GitHub Tag Bump
         id: tag_bump
+        if: steps.resolve_bump.outputs.bump != 'skip'
         uses: anothrNick/github-tag-action@1.73.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -85,12 +90,37 @@ jobs:
           # precedence over this, which is the action's own behaviour.
           DEFAULT_BUMP: ${{ steps.resolve_bump.outputs.bump }}
 
-      - name: Summarise
+      # No new tag was cut, so the package version is the one already tagged. Republishing it is a
+      # no-op on NuGet if it landed last time, and completes the release if it did not.
+      - name: Reuse latest tag
+        id: latest_tag
+        if: steps.resolve_bump.outputs.bump == 'skip'
         run: |
-          echo "Bumped **${{ steps.resolve_bump.outputs.bump }}** to \`${{ steps.tag_bump.outputs.new_tag }}\`." >> "$GITHUB_STEP_SUMMARY"
+          set -euo pipefail
+
+          tag=$(git tag --sort=-v:refname | head -n1)
+
+          if [ -z "$tag" ]; then
+            echo "::error::A 'skip' run reuses the latest tag, but this repository has no tags yet. Re-run with a patch, minor or major bump."
+            exit 1
+          fi
+
+          echo "Reusing existing tag '$tag' without bumping."
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - name: Summarise
+        env:
+          BUMP: ${{ steps.resolve_bump.outputs.bump }}
+          VERSION: ${{ steps.tag_bump.outputs.new_tag || steps.latest_tag.outputs.tag }}
+        run: |
+          if [ "$BUMP" = "skip" ]; then
+            echo "Version bump **skipped**; republishing \`$VERSION\`." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Bumped **$BUMP** to \`$VERSION\`." >> "$GITHUB_STEP_SUMMARY"
+          fi
 
     outputs:
-      new_version: ${{ steps.tag_bump.outputs.new_tag }}
+      new_version: ${{ steps.tag_bump.outputs.new_tag || steps.latest_tag.outputs.tag }}
 
   build:
     needs: generate-version
