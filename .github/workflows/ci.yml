@@ -28,9 +28,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-        with:
-          # Tags are needed by the 'skip' path, which reuses the latest one rather than cutting a new one.
-          fetch-tags: true
 
       # Decide which part of the version to bump. A manual run uses the dispatch input; a push to
       # main takes it from the merged PR's labels, defaulting to patch when none is present.
@@ -95,13 +92,19 @@ jobs:
       - name: Reuse latest tag
         id: latest_tag
         if: steps.resolve_bump.outputs.bump == 'skip'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
 
-          tag=$(git tag --sort=-v:refname | head -n1)
+          # Read tags from the API rather than the working copy. The checkout is shallow, and tags
+          # are not reliably present in it; the API is authoritative regardless of checkout depth.
+          # Sorted here rather than trusting the API's order, and with -V so 1.0.10 beats 1.0.9.
+          # tail rather than head: it consumes all input, so it cannot SIGPIPE sort under pipefail.
+          tag=$(gh api --paginate "repos/${GITHUB_REPOSITORY}/tags" --jq '.[].name' | sort -V | tail -n1)
 
           if [ -z "$tag" ]; then
-            echo "::error::A 'skip' run reuses the latest tag, but this repository has no tags yet. Re-run with a patch, minor or major bump."
+            echo "::error::A 'skip' run reuses the latest tag, but no tags were returned for ${GITHUB_REPOSITORY}. Re-run with a patch, minor or major bump."
             exit 1
           fi
 
