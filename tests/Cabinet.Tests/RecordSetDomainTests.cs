@@ -235,6 +235,61 @@ public class RecordSetDomainTests : IDisposable
 	}
 
 	[Fact]
+	public async Task AsQueryable_ShouldSupportConditionalQueryComposition()
+	{
+		// Arrange
+		var options = new RecordSetOptions<TestRecord>
+		{
+			IdSelector = r => r.Id
+		};
+		var recordSet = new RecordSet<TestRecord>(_store, options);
+
+		await recordSet.LoadAsync();
+		await recordSet.AddAsync(new TestRecord { Id = "1", Name = "Alice", Value = 10 });
+		await recordSet.AddAsync(new TestRecord { Id = "2", Name = "Bob", Value = 20 });
+		await recordSet.AddAsync(new TestRecord { Id = "3", Name = "Charlie", Value = 30 });
+
+		// Act
+		var minValue = 20;
+		var query = recordSet.AsQueryable();
+		query = query.Where(r => r.Value >= minValue);
+		var results = query.Select(r => r.Name).ToList();
+
+		// Assert
+		Assert.Equal(2, results.Count);
+		Assert.Contains("Bob", results);
+		Assert.Contains("Charlie", results);
+	}
+
+	[Fact]
+	public async Task AsQueryable_WithCachingDisabled_ShouldThrowInvalidOperationException()
+	{
+		// Arrange
+		var sharedFileName = "AsQueryableCachingDisabledTest";
+		var cachedOptions = new RecordSetOptions<TestRecord>
+		{
+			IdSelector = r => r.Id,
+			CustomFileName = sharedFileName
+		};
+		var uncachedOptions = new RecordSetOptions<TestRecord>
+		{
+			IdSelector = r => r.Id,
+			CustomFileName = sharedFileName,
+			EnableCaching = false
+		};
+		var cachedRecordSet = new RecordSet<TestRecord>(_store, cachedOptions);
+		var uncachedRecordSet = new RecordSet<TestRecord>(_store, uncachedOptions);
+
+		await cachedRecordSet.LoadAsync();
+		await cachedRecordSet.AddAsync(new TestRecord { Id = "1", Name = "Alice", Value = 10 });
+
+		await uncachedRecordSet.LoadAsync();
+
+		// Act / Assert
+		Assert.Throws<InvalidOperationException>(() => uncachedRecordSet.AsQueryable());
+	}
+
+	[Fact]
 	public async Task OrderBy_ShouldSortRecords()
 	{
 		// Arrange

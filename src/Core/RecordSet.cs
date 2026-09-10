@@ -365,6 +365,26 @@ public sealed class RecordSet<T> where T : class
 	}
 
 	/// <summary>
+	/// Gets all loaded records as queryable.
+	/// </summary>
+	/// <returns>Queryable records from the cache</returns>
+	/// <exception cref="InvalidOperationException">
+	/// Thrown when the record set has not been loaded, or when caching is disabled and no in-memory cache is available.
+	/// Call LoadAsync() or GetAllAsync() first, and ensure caching is enabled.
+	/// </exception>
+	public IQueryable<T> AsQueryable()
+	{
+		EnsureLoaded();
+		if (_cache == null)
+		{
+			throw new InvalidOperationException(
+				$"Queryable access for RecordSet<{typeof(T).Name}> requires an in-memory cache. Ensure caching is enabled before calling AsQueryable().");
+		}
+
+		return _cache.Values.AsQueryable();
+	}
+
+	/// <summary>
 	/// Orders records by a key selector. Operates on cached data.
 	/// </summary>
 	/// <typeparam name="TKey">The type of the key</typeparam>

@@ -240,6 +240,22 @@ public class RecordQueryTests
 		Assert.Equal(3, enumerable.Count());
 	}
 
+	[Fact]
+	public void RecordQuery_AsQueryable_ShouldReturnQueryableSource()
+	{
+		// Arrange
+		var data = new[] { 1, 2, 3, 4 };
+		var recordQuery = new RecordQuery<int>(data);
+
+		// Act
+		var queryable = recordQuery.AsQueryable();
+		var results = queryable.Where(x => x > 2).ToList();
+
+		// Assert
+		Assert.NotNull(queryable);
+		Assert.Equal(new[] { 3, 4 }, results);
+	}
+
 	private class TestPerson
 	{
 		public string Name { get; set; } = string.Empty;
